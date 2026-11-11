@@ -47,6 +47,16 @@ export function tailorBullets(profile: ResumeProfile, jdKeywords: string[]): Tai
   const profileSkillSet = new Set(profile.skills.map((s) => s.toLowerCase()));
   const unclaimable = jdKeywords.filter((k) => !profileSkillSet.has(k.toLowerCase()));
 
+  // Ranked by relevance for *selection* in the UI only. The tie-break
+  // is profile order — never alphabetical (an alphabetical tie-break
+  // leaked into the generated resume in the Fintech PDF). The document
+  // builders in documents.ts re-sort into profile order anyway, so the
+  // final resume is always reverse-chronological by employer.
+  const profileOrder = new Map<string, number>();
+  profile.bullets.forEach((bullet, index) => {
+    if (!profileOrder.has(bullet.id)) profileOrder.set(bullet.id, index);
+  });
+
   const tailored: TailoredBullet[] = profile.bullets
     .map((bullet) => {
       const matched = bulletKeywords(bullet, jdKeywords);
@@ -61,7 +71,11 @@ export function tailorBullets(profile: ResumeProfile, jdKeywords: string[]): Tai
         approved: matched.length > 0,
       };
     })
-    .sort((a, b) => b.relevance - a.relevance || a.originalText.localeCompare(b.originalText));
+    .sort(
+      (a, b) =>
+        b.relevance - a.relevance ||
+        (profileOrder.get(a.bulletId) ?? 0) - (profileOrder.get(b.bulletId) ?? 0),
+    );
 
   return { tailored, unclaimable };
 }

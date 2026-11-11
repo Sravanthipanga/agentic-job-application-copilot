@@ -67,7 +67,7 @@ export default function DownloadButtons({
           <button
             type="button"
             disabled={!hasResume || busy !== null}
-            onClick={() => run("Resume (PDF)", () => downloadResumePdf(profile, approved, role, company))}
+            onClick={() => run("Resume (PDF)", () => downloadResumePdf(profile, approved, company))}
             className={buttonClass}
           >
             {busy === "Resume (PDF)" ? "Generating…" : "Resume (PDF)"}
@@ -78,7 +78,7 @@ export default function DownloadButtons({
           <button
             type="button"
             disabled={!hasResume || busy !== null}
-            onClick={() => run("Resume (Word)", () => downloadResumeDocx(profile, approved, role, company))}
+            onClick={() => run("Resume (Word)", () => downloadResumeDocx(profile, approved, company))}
             className={buttonClass}
           >
             {busy === "Resume (Word)" ? "Generating…" : "Resume (Word)"}

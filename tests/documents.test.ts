@@ -173,8 +173,6 @@ describe("real file generation", () => {
     const blob = await generateResumePdfBlob(
       TEST_PROFILE,
       [APPROVED],
-      "Senior Software Engineer",
-      "Acme Health",
     );
     expect(blob.type).toBe("application/pdf");
     const bytes = new Uint8Array(await blob.arrayBuffer());
@@ -186,8 +184,6 @@ describe("real file generation", () => {
     const blob = await generateResumeDocxBlob(
       TEST_PROFILE,
       [APPROVED],
-      "Senior Software Engineer",
-      "Acme Health",
     );
     expect(blob.type).toBe(
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",

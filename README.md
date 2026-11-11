@@ -129,13 +129,45 @@ to keep `npm install` reproducible.
 - **JD parsing** (`src/lib/jd.ts`) — labelled lines first, then "Role at
   Company" heuristics; the user always confirms the values.
 
+## Resume Format
+
+The Resume Maker's formatting comes **only** from the reference resume
+the user supplied (her own well-aligned resume, Letter size,
+Calibri/Cambria). Its wording was not copied — only sizes, bold, and
+alignment were adopted:
+
+- **Name:** bold 20pt, centered. **Title:** 11pt, centered.
+- **Contact line:** 11pt, centered — "Email: … | Mobile: … |
+  Location: … | LinkedIn | GitHub | Personal Website", with the email
+  (`mailto:`) and the LinkedIn, GitHub, and portfolio URLs as real
+  clickable hyperlinks (blue + underlined) in both PDF and Word.
+- **Section headings** (Professional Summary, Skills, Work Experience,
+  Certifications, Education): bold 12pt, ALL CAPS, left-aligned, no
+  underlines — the same style on every section.
+- **Company name:** bold 11pt. **Job title + dates:** bold 10pt.
+- **Body bullets:** 11pt, "•" with a hanging indent. Skills are a
+  wrapped 11pt paragraph (the profile's flat skill list, no invented
+  categories). Each employer ends with a "Technologies Used:" line
+  (bold label, 11pt) built from that employer's bullets' own skills.
+- **Fonts:** Word files use the real Calibri (name/headings/company/
+  title) and Cambria (body) fonts; PDFs use Helvetica as the closest
+  built-in approximation.
+- **Ordering rules:** experience is always in reverse-chronological
+  profile order (Bamboo Health → Context4 Healthcare → Optum Global
+  Solutions → Phoenix Global) and bullets stay in their original
+  profile order inside each employer. Tailoring ranks bullets by
+  relevance only to *select* them; the document re-sorts into profile
+  order, and never sorts alphabetically. The resume header is only
+  Name, Title, and the contact line — there is no "Tailored for …"
+  line.
+
 ## Honest Limits
 
 - Keyword overlap is not a real ATS: real systems also weigh formatting,
   experience depth, and recruiter review.
 - The skill taxonomy is curated, so unusual or brand-new technologies may
   not be recognised — the score then understates the match.
-- PDF resumes use a clean, simple template (headings, bold name, bullet
+- PDF resumes use a clean, single-column template (headings, bold name, bullet
   lists) rather than a designed multi-column layout; Word files use real
   headings and bullet lists.
 - Data lives in the browser only: no cross-device sync, no sharing.
