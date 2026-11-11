@@ -1,6 +1,6 @@
 # Agentic Job Application Copilot
 
-**Live: TBD — will be added after Vercel deployment**
+**Live: https://agentic-job-application-copilot.vercel.app/**
 
 Paste a job description and let the copilot do the repetitive work: score your
 resume against the JD, tailor your existing resume bullets to it, and draft a
