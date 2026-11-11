@@ -17,21 +17,33 @@ import type { ResumeProfile, SkillGroup, TailoredBullet } from "@/types";
  * the user supplied (Sravanthi_Panga_Resume-2.pdf, Letter 612x792pt,
  * Calibri/Cambria). Its wording was NOT copied; only sizes, bold, and
  * alignment were adopted:
- *   Name: Calibri-Bold 20pt, centered
+ *   Page margins: 36pt (0.5") on all sides
+ *   Name: Calibri-Bold 20pt, centered (baseline y=61, bbox top ~40)
  *   Contact: TWO centered lines, 11pt — line 1 "Email: … | Mobile: … |
  *     Location: …" (email is a black mailto: link), line 2 "Personal
- *     Website | GitHub | LinkedIn" (all three blue + underlined links)
+ *     Website | GitHub | LinkedIn" (all three blue + underlined links).
+ *     NO job-title line under the name — contact follows the name
+ *     directly, as on the reference.
  *   Section headings: bold 12pt, ALL CAPS, left-aligned, with a thin
- *     horizontal rule directly underneath EVERY heading
+ *     horizontal rule directly underneath EVERY heading; first content
+ *     line ~18pt below the heading baseline
  *   Professional Summary: 7 bullets, 11pt (profile.summaryBullets;
- *     the summary paragraph is the fallback only)
+ *     the summary paragraph is the fallback only). Hanging indent:
+ *     bullet at the left margin, text at margin+18pt, wrapped lines
+ *     also at margin+18pt.
  *   Skills: grouped by category, one paragraph per group with a BOLD
  *     label, e.g. "Programming Languages: Java 17, Java 21, …"
- *     (profile.skillGroups; the flat skill list is the fallback only)
+ *     (profile.skillGroups; the flat skill list is the fallback only).
+ *     Wrapped lines start at the left margin (no indent).
  *   Company name: bold 11pt, left-aligned
- *   Job title + dates: bold 10pt
- *   Body bullets: 11pt, "•" with hanging indent, left-aligned
- *   "Technologies Used:" label: bold 11pt, list in regular 11pt
+ *   Job title + dates: bold 10pt, ~16pt below the company line,
+ *     rendered "Role - Start to End" (dash + "to", as on the reference,
+ *     not "Role (Start – End)")
+ *   Body bullets: 11pt, "•" with hanging indent — work bullets have
+ *     the bullet at margin+18pt and text at margin+36pt, wrapped lines
+ *     also at margin+36pt. Line spacing 12pt throughout (11pt text).
+ *   "Technologies Used:" label: bold 11pt, list in regular 11pt,
+ *     wrapped lines at the left margin.
  * jsPDF has no Calibri/Cambria, so Helvetica approximates them in PDF
  * (Helvetica-Bold for Calibri-Bold); the Word files use the real fonts.
  *
@@ -60,7 +72,42 @@ export const RESUME_FORMAT = {
   jobTitleSize: 10,
   /** Body / bullet / skills size (pt). */
   bodySize: 11,
+  /** Page margin (pt) — 0.5", as on the reference resume. */
+  marginPt: 36,
+  /** Body line height (pt) — 12pt leading for 11pt text, as on the
+   *  reference resume (measured ~12pt between baselines). */
+  lineHeightPt: 12,
+  /** Heading baseline to first content-line baseline (pt). */
+  headingToContentPt: 18,
+  /** Company baseline to role baseline (pt). */
+  companyToRolePt: 16,
+  /** Name baseline (pt) — puts the name's bbox top at ~40pt, as on
+   *  the reference (Helvetica 20pt sits ~21pt above its baseline). */
+  nameBaselinePt: 61,
+  /** Name baseline to first contact-line baseline (pt). */
+  nameToContactPt: 14,
+  /** Summary / certification bullet: bullet indent from the margin (pt). */
+  summaryBulletIndentPt: 0,
+  /** Summary / certification bullet: text indent from the margin (pt);
+   *  wrapped lines align here (hanging indent). */
+  summaryTextIndentPt: 18,
+  /** Work bullet: bullet indent from the margin (pt). */
+  workBulletIndentPt: 18,
+  /** Work bullet: text indent from the margin (pt); wrapped lines
+   *  align here (hanging indent). */
+  workTextIndentPt: 36,
 } as const;
+
+/** "Software Engineer (Jun 2026 – Present)" -> "Software Engineer -
+ *  Jun 2026 to Present", as on the reference resume (dash + "to",
+ *  no parentheses). Accepts an en dash, em dash, or hyphen as the
+ *  date separator. Roles without a parenthesised date range are
+ *  returned unchanged. Render-time only — the seed data is untouched. */
+export function formatRoleLine(role: string): string {
+  const match = role.match(/^(.+?)\s*\(([^()]+?)\s*[–—-]\s*([^()]+?)\)\s*$/);
+  if (!match) return role;
+  return `${match[1].trim()} - ${match[2].trim()} to ${match[3].trim()}`;
+}
 
 // ---------------------------------------------------------------------------
 // Filenames
@@ -300,13 +347,16 @@ export function buildResumeContent(
   for (const bullet of approved) {
     const text = (bullet.suggestedText || bullet.originalText).trim();
     if (!text) continue;
+    // Role is reformatted at render time ("Role - Start to End", as
+    // on the reference); the seed role text is never edited.
+    const role = formatRoleLine(bullet.role);
     const group = experience.find(
-      (g) => g.company === bullet.company && g.role === bullet.role,
+      (g) => g.company === bullet.company && g.role === role,
     );
     if (group) {
       group.bullets.push(text);
     } else {
-      experience.push({ company: bullet.company, role: bullet.role, bullets: [text], technologies: [] });
+      experience.push({ company: bullet.company, role, bullets: [text], technologies: [] });
     }
   }
   // "Technologies Used:" per employer, from the profile bullets' own
@@ -316,7 +366,7 @@ export function buildResumeContent(
     const seen = new Set<string>();
     const technologies: string[] = [];
     for (const bullet of approved) {
-      if (bullet.company !== group.company || bullet.role !== group.role) continue;
+      if (bullet.company !== group.company || formatRoleLine(bullet.role) !== group.role) continue;
       const profileBullet = profileBulletById.get(bullet.bulletId);
       for (const skill of profileBullet?.skills ?? []) {
         if (!seen.has(skill)) {
@@ -417,8 +467,8 @@ interface PdfWriter {
   internal: { pageSize: { getWidth: () => number; getHeight: () => number } };
 }
 
-const MARGIN = 56; // ~0.78in on a US Letter page (612 x 792 pt)
-const LINE_HEIGHT = 15;
+const MARGIN = RESUME_FORMAT.marginPt; // 36pt = 0.5" (reference resume)
+const LINE_HEIGHT = RESUME_FORMAT.lineHeightPt; // 12pt leading (reference resume)
 const LINK_BLUE: [number, number, number] = [0, 102, 204];
 
 interface PdfSegment {
@@ -432,6 +482,10 @@ interface PdfSegment {
 function pdfWriter(doc: PdfWriter, startY: number): {
   addWrapped: (text: string, size: number, bold: boolean, indent?: number) => void;
   addMixedWrapped: (segments: PdfSegment[], size: number, indent?: number) => void;
+  /** A bullet with a real hanging indent: the "•" sits at
+   *  MARGIN + bulletIndent, the text starts at MARGIN + textIndent,
+   *  and wrapped lines align to the text start, not the bullet. */
+  addBullet: (text: string, size: number, bulletIndent: number, textIndent: number) => void;
   addSection: (title: string) => void;
   addGap: (points: number) => void;
   build: () => Blob;
@@ -459,17 +513,14 @@ function pdfWriter(doc: PdfWriter, startY: number): {
     addMixedWrapped([{ text, bold }], size, indent);
   }
 
-  /** Word-wrap across segments that may differ in bold/link styling. */
-  function addMixedWrapped(segments: PdfSegment[], size: number, indent = 0): void {
-    const maxWidth = contentWidth - indent;
-    // Split every segment into word tokens, keeping its style.
+  /** Greedy word-wrap of styled segments to a given max width. */
+  function wrapSegments(segments: PdfSegment[], size: number, maxWidth: number): PdfSegment[][] {
     const tokens: PdfSegment[] = [];
     for (const segment of segments) {
       for (const word of segment.text.split(/\s+/).filter(Boolean)) {
         tokens.push({ text: word, bold: segment.bold, url: segment.url, blackLink: segment.blackLink });
       }
     }
-    // Greedy line building, measured with the real font.
     const lines: PdfSegment[][] = [];
     let line: PdfSegment[] = [];
     let lineWidth = 0;
@@ -487,10 +538,14 @@ function pdfWriter(doc: PdfWriter, startY: number): {
       lineWidth += wordWidth;
     }
     if (line.length > 0) lines.push(line);
+    return lines;
+  }
 
+  /** Draw wrapped lines of styled tokens at a given x offset. */
+  function drawLines(lines: PdfSegment[][], size: number, xStart: number): void {
     ensureSpace(lines.length * LINE_HEIGHT + 2);
     for (const lineTokens of lines) {
-      let x = MARGIN + indent;
+      let x = xStart;
       lineTokens.forEach((token, index) => {
         setStyle(size, token.bold, token.url, token.blackLink);
         const width = doc.getTextWidth(token.text);
@@ -510,6 +565,32 @@ function pdfWriter(doc: PdfWriter, startY: number): {
     }
   }
 
+  /** Word-wrap across segments that may differ in bold/link styling. */
+  function addMixedWrapped(segments: PdfSegment[], size: number, indent = 0): void {
+    const lines = wrapSegments(segments, size, contentWidth - indent);
+    drawLines(lines, size, MARGIN + indent);
+  }
+
+  function addBullet(text: string, size: number, bulletIndent: number, textIndent: number): void {
+    const lines = wrapSegments([{ text, bold: false }], size, contentWidth - textIndent);
+    ensureSpace(lines.length * LINE_HEIGHT + 2);
+    lines.forEach((lineTokens, lineIndex) => {
+      if (lineIndex === 0) {
+        // Bullet glyph on the first line only, at its own indent.
+        setStyle(size, false);
+        doc.text("•", MARGIN + bulletIndent, y);
+      }
+      let x = MARGIN + textIndent;
+      lineTokens.forEach((token, index) => {
+        setStyle(size, token.bold, token.url, token.blackLink);
+        const width = doc.getTextWidth(token.text);
+        doc.text(token.text, x, y);
+        x += width + (index < lineTokens.length - 1 ? doc.getTextWidth(" ") : 0);
+      });
+      y += LINE_HEIGHT;
+    });
+  }
+
   function addSection(title: string): void {
     ensureSpace(36);
     y += 10;
@@ -522,12 +603,14 @@ function pdfWriter(doc: PdfWriter, startY: number): {
     doc.setDrawColor(0, 0, 0);
     doc.setLineWidth(0.75);
     doc.line(MARGIN, y + 3, MARGIN + contentWidth, y + 3);
-    y += 12;
+    // First content line sits ~18pt below the heading baseline.
+    y += RESUME_FORMAT.headingToContentPt;
   }
 
   return {
     addWrapped,
     addMixedWrapped,
+    addBullet,
     addSection,
     addGap: (points: number) => {
       ensureSpace(points);
@@ -632,30 +715,32 @@ function buildResumePdf(
 ): Blob {
   const doc = new JsPDF({ unit: "pt", format: "letter" });
 
-  // Header — Name (20pt bold, centered), Title (11pt, centered),
-  // contact line (11pt, centered, clickable links). No "Tailored for"
-  // line: the header is only name, title, and contact.
+  // Header — Name (20pt bold, centered) then contact directly, as on
+  // the reference resume: NO job-title line under the name. The name
+  // baseline (61pt) puts its bbox top at ~40pt, matching the reference.
   const pageWidth = doc.internal.pageSize.getWidth();
   const contentWidth = pageWidth - MARGIN * 2;
-  let y = MARGIN + 20;
+  let y: number = RESUME_FORMAT.nameBaselinePt;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(RESUME_FORMAT.nameSize);
   doc.setTextColor(0, 0, 0);
   doc.text(content.name, MARGIN + contentWidth / 2, y, { align: "center" });
-  y += 20;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(RESUME_FORMAT.contactSize);
-  doc.setTextColor(0, 0, 0);
-  doc.text(content.title, MARGIN + contentWidth / 2, y, { align: "center" });
-  y += 18;
+  y += RESUME_FORMAT.nameToContactPt;
   y = drawContactLines(doc, content.contact, y);
 
-  const w = pdfWriter(doc, y + 8);
+  // First heading baseline lands at ~130pt (bbox top ~117pt), as on
+  // the reference: contact ends at y, addSection adds 10pt before it.
+  const w = pdfWriter(doc, y + 21);
 
   if (content.summaryBullets.length > 0) {
     w.addSection("Professional Summary");
     for (const bullet of content.summaryBullets) {
-      w.addWrapped(`•  ${bullet}`, RESUME_FORMAT.bodySize, false, 14);
+      w.addBullet(
+        bullet,
+        RESUME_FORMAT.bodySize,
+        RESUME_FORMAT.summaryBulletIndentPt,
+        RESUME_FORMAT.summaryTextIndentPt,
+      );
     }
   } else if (content.summary.trim()) {
     w.addSection("Professional Summary");
@@ -680,9 +765,16 @@ function buildResumePdf(
     w.addSection("Work Experience");
     for (const group of content.experience) {
       w.addWrapped(group.company, RESUME_FORMAT.companySize, true);
+      // Company baseline to role baseline is ~16pt (12pt line + 4pt gap).
+      w.addGap(RESUME_FORMAT.companyToRolePt - RESUME_FORMAT.lineHeightPt);
       w.addWrapped(group.role, RESUME_FORMAT.jobTitleSize, true);
       for (const bullet of group.bullets) {
-        w.addWrapped(`•  ${bullet}`, RESUME_FORMAT.bodySize, false, 14);
+        w.addBullet(
+          bullet,
+          RESUME_FORMAT.bodySize,
+          RESUME_FORMAT.workBulletIndentPt,
+          RESUME_FORMAT.workTextIndentPt,
+        );
       }
       if (group.technologies.length > 0) {
         w.addMixedWrapped(
@@ -691,7 +783,7 @@ function buildResumePdf(
             { text: group.technologies.join(", "), bold: false },
           ],
           RESUME_FORMAT.bodySize,
-          14,
+          0,
         );
       }
       w.addGap(4);
@@ -700,7 +792,12 @@ function buildResumePdf(
   if (content.certifications.length > 0) {
     w.addSection("Certifications");
     for (const entry of content.certifications) {
-      w.addWrapped(`•  ${entry}`, RESUME_FORMAT.bodySize, false, 14);
+      w.addBullet(
+        entry,
+        RESUME_FORMAT.bodySize,
+        RESUME_FORMAT.summaryBulletIndentPt,
+        RESUME_FORMAT.summaryTextIndentPt,
+      );
     }
   }
   if (content.education.length > 0) {
@@ -769,16 +866,13 @@ async function buildResumeDocx(content: ResumeContent): Promise<Blob> {
     });
 
   const children: InstanceType<typeof Paragraph>[] = [];
-  // Header: name 20pt bold centered, title 11pt centered, contact 11pt
-  // centered with real clickable hyperlinks. No "Tailored for" line.
+  // Header: name 20pt bold centered, then contact directly — NO
+  // job-title line under the name, as on the reference resume.
+  // No "Tailored for" line.
   children.push(
     new Paragraph({
       alignment: AlignmentType.CENTER,
       children: [calibri(content.name, { bold: true, size: RESUME_FORMAT.nameSize * 2 })],
-    }),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      children: [calibri(content.title, { size: RESUME_FORMAT.contactSize * 2 })],
     }),
   );
   // Contact as exactly two centered lines, as on the reference resume:
@@ -820,7 +914,8 @@ async function buildResumeDocx(content: ResumeContent): Promise<Blob> {
       children.push(
         new Paragraph({
           bullet: { level: 0 },
-          spacing: { after: 40 },
+          indent: { left: 360, hanging: 360 },
+          spacing: { after: 0, line: 240 },
           children: [cambria(bullet, { size: RESUME_FORMAT.bodySize * 2 })],
         }),
       );
@@ -836,7 +931,7 @@ async function buildResumeDocx(content: ResumeContent): Promise<Blob> {
     for (const group of content.skillGroups) {
       children.push(
         new Paragraph({
-          spacing: { after: 40 },
+          spacing: { after: 0, line: 240 },
           children: [
             calibri(`${group.label}: `, { bold: true, size: RESUME_FORMAT.bodySize * 2 }),
             cambria(group.skills.join(", "), { size: RESUME_FORMAT.bodySize * 2 }),
@@ -859,7 +954,7 @@ async function buildResumeDocx(content: ResumeContent): Promise<Blob> {
           children: [calibri(group.company, { bold: true, size: RESUME_FORMAT.companySize * 2 })],
         }),
         new Paragraph({
-          spacing: { after: 60 },
+          spacing: { before: 60, after: 0, line: 240 },
           children: [calibri(group.role, { bold: true, size: RESUME_FORMAT.jobTitleSize * 2 })],
         }),
       );
@@ -867,7 +962,8 @@ async function buildResumeDocx(content: ResumeContent): Promise<Blob> {
         children.push(
           new Paragraph({
             bullet: { level: 0 },
-            spacing: { after: 40 },
+            indent: { left: 720, hanging: 360 },
+            spacing: { after: 0, line: 240 },
             children: [cambria(bullet, { size: RESUME_FORMAT.bodySize * 2 })],
           }),
         );
@@ -875,8 +971,8 @@ async function buildResumeDocx(content: ResumeContent): Promise<Blob> {
       if (group.technologies.length > 0) {
         children.push(
           new Paragraph({
-            indent: { left: 360 },
-            spacing: { after: 120 },
+            indent: { left: 0 },
+            spacing: { after: 60, line: 240 },
             children: [
               calibri("Technologies Used: ", { bold: true, size: RESUME_FORMAT.bodySize * 2 }),
               cambria(group.technologies.join(", "), { size: RESUME_FORMAT.bodySize * 2 }),
@@ -892,7 +988,8 @@ async function buildResumeDocx(content: ResumeContent): Promise<Blob> {
       children.push(
         new Paragraph({
           bullet: { level: 0 },
-          spacing: { after: 40 },
+          indent: { left: 360, hanging: 360 },
+          spacing: { after: 0, line: 240 },
           children: [cambria(entry, { size: RESUME_FORMAT.bodySize * 2 })],
         }),
       );
@@ -907,7 +1004,21 @@ async function buildResumeDocx(content: ResumeContent): Promise<Blob> {
     }
   }
 
-  const doc = new Document({ sections: [{ children }] });
+  const doc = new Document({
+    sections: [
+      {
+        // Letter page (12240 x 15840 twips) with 0.5" margins
+        // (720 twips), as on the reference resume.
+        properties: {
+          page: {
+            size: { width: 12240, height: 15840 },
+            margin: { top: 720, right: 720, bottom: 720, left: 720 },
+          },
+        },
+        children,
+      },
+    ],
+  });
   return Packer.toBlob(doc);
 }
 

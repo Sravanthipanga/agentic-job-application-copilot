@@ -5,6 +5,7 @@ import {
   buildResumeContent,
   contactLines,
   contactSegments,
+  formatRoleLine,
   generateResumeDocxBlob,
   generateResumePdfBlob,
   parseContact,
@@ -44,6 +45,61 @@ describe("resume format constants (reference resume: Calibri/Cambria)", () => {
     expect(RESUME_FORMAT.bodySize).toBe(11);
     expect(RESUME_FORMAT.jobTitleSize).toBe(10);
   });
+
+  it("uses the reference layout: 0.5in margins, 12pt leading, 18pt heading gap, 16pt company-to-role", () => {
+    expect(RESUME_FORMAT.marginPt).toBe(36);
+    expect(RESUME_FORMAT.lineHeightPt).toBe(12);
+    expect(RESUME_FORMAT.headingToContentPt).toBe(18);
+    expect(RESUME_FORMAT.companyToRolePt).toBe(16);
+    expect(RESUME_FORMAT.nameBaselinePt).toBe(61);
+    expect(RESUME_FORMAT.nameToContactPt).toBe(14);
+    expect(RESUME_FORMAT.summaryBulletIndentPt).toBe(0);
+    expect(RESUME_FORMAT.summaryTextIndentPt).toBe(18);
+    expect(RESUME_FORMAT.workBulletIndentPt).toBe(18);
+    expect(RESUME_FORMAT.workTextIndentPt).toBe(36);
+  });
+});
+
+describe("role + dates rendering (reference: 'Role - Start to End')", () => {
+  it("reformats parenthesised date ranges to dash + 'to'", () => {
+    expect(formatRoleLine("Software Engineer (Jun 2026 – Present)")).toBe(
+      "Software Engineer - Jun 2026 to Present",
+    );
+    expect(formatRoleLine("Full Stack Developer (Jan 2025 - May 2026)")).toBe(
+      "Full Stack Developer - Jan 2025 to May 2026",
+    );
+    expect(formatRoleLine("Associate Software Engineer (Feb 2021 — Nov 2023)")).toBe(
+      "Associate Software Engineer - Feb 2021 to Nov 2023",
+    );
+  });
+
+  it("leaves roles without a parenthesised date range unchanged", () => {
+    expect(formatRoleLine("Software Engineer")).toBe("Software Engineer");
+    expect(formatRoleLine("Software Engineer - Jun 2026 to Present")).toBe(
+      "Software Engineer - Jun 2026 to Present",
+    );
+  });
+
+  it("buildResumeContent stores the reformatted role, seed data untouched", () => {
+    const content = buildResumeContent(SAMPLE_PROFILE, allApproved());
+    expect(content.experience.map((g) => g.role)).toEqual([
+      "Software Engineer - Jun 2026 to Present",
+      "Full Stack Developer - Jan 2025 to May 2026",
+      "Associate Software Engineer - Feb 2021 to Nov 2023",
+      "Software Engineer - Aug 2019 to Feb 2021",
+    ]);
+    // The seed still holds the original parenthesised form.
+    expect(SAMPLE_PROFILE.bullets[0].role).toBe("Software Engineer (Jun 2026 – Present)");
+  });
+
+  it("PDF shows the reformatted role and no parenthesised dates", async () => {
+    const blob = await generateResumePdfBlob(SAMPLE_PROFILE, allApproved());
+    const visible = await pdfVisibleText(blob);
+    expect(visible).toContain("Software Engineer - Jun 2026 to Present");
+    expect(visible).toContain("Full Stack Developer - Jan 2025 to May 2026");
+    expect(visible).not.toContain("(Jun 2026");
+    expect(visible).not.toContain("(Jan 2025");
+  });
 });
 
 describe("experience ordering (Fintech PDF bug)", () => {
@@ -58,8 +114,9 @@ describe("experience ordering (Fintech PDF bug)", () => {
     const content = buildResumeContent(SAMPLE_PROFILE, [...allApproved()].reverse());
     const profileBullets = SAMPLE_PROFILE.bullets;
     for (const group of content.experience) {
+      // group.role is the reformatted ("Role - Start to End") form.
       const expected = profileBullets
-        .filter((b) => b.company === group.company && b.role === group.role)
+        .filter((b) => b.company === group.company && formatRoleLine(b.role) === group.role)
         .map((b) => b.text);
       expect(group.bullets).toEqual(expected);
     }
@@ -240,8 +297,10 @@ describe("reference-format fixes (second screenshot vs generated resume)", () =>
     const bytes = new Uint8Array(await blob.arrayBuffer());
     const documentXml = unzipEntry(bytes, "word/document.xml");
     const relsXml = unzipEntry(bytes, "word/_rels/document.xml.rels");
-    // Name, title, contact line 1, contact line 2 are all centered.
-    expect((documentXml.match(/w:val="center"/g) ?? []).length).toBeGreaterThanOrEqual(4);
+    // Name, contact line 1, contact line 2 are all centered.
+    // (No job-title line under the name any more — the reference
+    // resume has none, so the count is 3, not 4.)
+    expect((documentXml.match(/w:val="center"/g) ?? []).length).toBeGreaterThanOrEqual(3);
     expect(relsXml).toContain("mailto:sravanthipanga51@gmail.com");
     expect(relsXml).toContain("https://pangasravanthi.netlify.app/");
     expect(relsXml).toContain("https://github.com/Sravanthipanga");
@@ -310,6 +369,80 @@ describe("generated resume files", () => {
     );
   });
 });
+
+describe("reference sizes and alignment (third screenshot)", () => {
+  it("Word file has no job-title line under the name", async () => {
+    const blob = await generateResumeDocxBlob(SAMPLE_PROFILE, allApproved());
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    const documentXml = unzipEntry(bytes, "word/document.xml");
+    // No paragraph whose only run text is exactly "Software Engineer":
+    // the role lines are "Software Engineer - Jun 2026 to Present".
+    expect(documentXml).not.toContain(">Software Engineer</w:t>");
+    // The name is immediately followed (in paragraph order) by the
+    // contact line, not by a title line.
+    const nameIndex = documentXml.indexOf("Sravanthi Panga");
+    const emailIndex = documentXml.indexOf("sravanthipanga51@gmail.com");
+    expect(nameIndex).toBeGreaterThanOrEqual(0);
+    expect(emailIndex).toBeGreaterThan(nameIndex);
+    expect(documentXml.slice(nameIndex, emailIndex)).not.toContain("Software Engineer</w:t>");
+  });
+
+  it("PDF has no standalone job-title line under the name", async () => {
+    const blob = await generateResumePdfBlob(SAMPLE_PROFILE, allApproved());
+    const visible = await pdfVisibleText(blob);
+    // With the title line removed, the word after the name is the
+    // start of the contact line ("Email:"), not "Software Engineer".
+    const words = visible.split(/\s+/);
+    const nameIndex = words.indexOf("Panga");
+    expect(nameIndex).toBeGreaterThanOrEqual(0);
+    expect(words[nameIndex + 1]).toBe("Email:");
+    expect(visible).toContain("Software Engineer - Jun 2026 to Present");
+  });
+
+  it("Word file uses 0.5in (720 twips) page margins", async () => {
+    const blob = await generateResumeDocxBlob(SAMPLE_PROFILE, allApproved());
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    const documentXml = unzipEntry(bytes, "word/document.xml");
+    expect(documentXml).toContain('w:top="720"');
+    expect(documentXml).toContain('w:right="720"');
+    expect(documentXml).toContain('w:bottom="720"');
+    expect(documentXml).toContain('w:left="720"');
+  });
+
+  it("Word bullets use hanging indents: summary at 0.25in, work at 0.5in", async () => {
+    const blob = await generateResumeDocxBlob(SAMPLE_PROFILE, allApproved());
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    const documentXml = unzipEntry(bytes, "word/document.xml");
+    // Summary/cert bullets: left 360 twips (0.25"), hanging 360.
+    expect(documentXml).toContain('w:left="360"');
+    expect(documentXml).toContain('w:hanging="360"');
+    // Work bullets: left 720 twips (0.5"), hanging 360.
+    expect(documentXml).toContain('w:left="720"');
+  });
+
+  it("Word Technologies Used lines start at the left margin", async () => {
+    const blob = await generateResumeDocxBlob(SAMPLE_PROFILE, allApproved());
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    const documentXml = unzipEntry(bytes, "word/document.xml");
+    // The Technologies Used paragraphs carry w:left="0" (no indent).
+    expect(documentXml).toContain('w:left="0"');
+    expect(documentXml).toContain("Technologies Used:");
+  });
+});
+
+/** Reconstruct the visible text of a jsPDF-generated PDF, in draw order.
+ *  jsPDF writes every word as its own "(word) Tj" call, so multi-word
+ *  strings never appear contiguously in the raw stream. */
+async function pdfVisibleText(blob: Blob): Promise<string> {
+  const raw = new TextDecoder("latin1").decode(await blob.arrayBuffer());
+  const words: string[] = [];
+  const re = /\((?:\\.|[^\\()])*\) Tj/g;
+  for (const match of raw.matchAll(re)) {
+    const inner = match[0].slice(1, -4);
+    words.push(inner.replace(/\\\(/g, "(").replace(/\\\)/g, ")").replace(/\\\\/g, "\\"));
+  }
+  return words.join(" ");
+}
 
 /** Minimal ZIP reader for .docx packages (stored or DEFLATE entries). */
 function unzipEntry(bytes: Uint8Array, wantedName: string): string {
