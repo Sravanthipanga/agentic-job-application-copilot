@@ -23,7 +23,9 @@ Then track every application in one place.
   this week). Export the tracker as JSON or CSV.
 - **Resume Profile** — your editable base profile: name, title, summary,
   skills (add/remove), and experience bullets (each with company, role, text,
-  and the skills it demonstrates). Import/export the profile as JSON.
+  and the skills it demonstrates), plus contact line, education, and
+  certifications. Import/export the profile as JSON. It comes pre-filled
+  with Sravanthi Panga's real resume.
 - **New Application — the 5-step agent workflow** (human-in-the-loop at
   every step):
   1. **Paste JD** — company and role are auto-detected from the text
@@ -58,18 +60,21 @@ Then track every application in one place.
   - **Resume content:** header (name, title, contact line if set on your
     profile), Professional Summary, Skills, Experience using only the
     APPROVED tailored bullets grouped under their company/role, and
-    Education if set on your profile. Add a contact line and education on
-    the Resume Profile page.
+    Education and Certifications if set on your profile. Add a contact line,
+    education, and certifications on the Resume Profile page.
   - **Cover letter content:** header (name, title, date, company + role),
     the saved cover-letter paragraphs, and a sign-off with your name.
   - Resume buttons are disabled until at least one bullet is approved;
     cover-letter buttons are disabled until a cover letter exists.
   - Generated in the browser with `jspdf` (PDF) and `docx` (Word), loaded
     only when you click a download button.
-- **Sample data** — a fictional sample profile ("Sam Carter", invented
-  companies) and 3 sample applications in different statuses, so the
-  dashboard is useful on first load. Replace the profile with your own and
-  delete the samples when ready.
+- **Sample data** — the profile is pre-filled with Sravanthi Panga's real
+  resume (provided by her on Nov 11, 2026 — editable on the Resume Profile
+  page, including contact, education, and certifications), so downloads
+  come out as `Sravanthi_Panga_resume_<Company>.pdf` etc. The 3 sample
+  applications (Acme Health, Beacon Labs, Northwind Systems) are fictional
+  companies/JDs, so the dashboard is useful on first load; delete them
+  when ready.
 
 ## Tech Stack
 
@@ -91,7 +96,7 @@ npm run dev
 Open http://localhost:3000
 
 ```sh
-npm test    # 6 test files, 42 tests
+npm test    # 7 test files, 51 tests
 npm run build
 npm run lint
 ```
@@ -138,8 +143,9 @@ to keep `npm install` reproducible.
 ## Privacy
 
 All data (profile, applications, drafts) stays in your browser's
-localStorage. Nothing is sent to a server. The sample profile and
-applications are fictional — do not treat them as a real person's resume.
+localStorage. Nothing is sent to a server. The profile is Sravanthi Panga's
+real resume as provided by her; the 3 sample applications are fictional
+companies/JDs — do not treat them as real applications.
 
 ## What I Would Build Next
 

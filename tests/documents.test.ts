@@ -18,16 +18,16 @@ const TEST_PROFILE: ResumeProfile = {
   ...SAMPLE_PROFILE,
   name: "Sravanthi Panga",
   title: "Software Engineer",
-  contact: "sravanthi@example.com · 815-555-0000",
-  education: ["M.S. Computer Science, Northern Illinois University, 2025"],
+  contact: "sravanthipanga51@gmail.com | 8159950003 | Lisle, IL, United States",
+  education: ["Masters in Computer Science | Northern Illinois University | 3.38 GPA"],
 };
 
 const APPROVED: TailoredBullet = {
   bulletId: "b1",
-  company: "Northwind Health",
-  role: "Software Engineer",
-  originalText: "Built a claims intake API.",
-  suggestedText: "Built a Java Spring Boot claims intake API serving 2M requests a month.",
+  company: "Bamboo Health",
+  role: "Software Engineer (Jun 2026 – Present)",
+  originalText: "Design, code, and debug production-quality full-stack features.",
+  suggestedText: "Design, code, and debug production-quality full-stack features for customer-facing healthcare software and web services using Java, .NET, Spring Boot, React, and TypeScript.",
   matchedKeywords: ["Java", "Spring Boot"],
   relevance: 4,
   approved: true,
@@ -57,8 +57,8 @@ describe("filenames", () => {
   });
 
   it("removes spaces from multi-word company names", () => {
-    expect(resumeFilename("Sam Carter", "Northwind Systems", "pdf")).toBe(
-      "Sam_Carter_resume_NorthwindSystems.pdf",
+    expect(resumeFilename("Alex Morgan", "Northwind Systems", "pdf")).toBe(
+      "Alex_Morgan_resume_NorthwindSystems.pdf",
     );
   });
 
@@ -91,7 +91,7 @@ describe("resume content assembly", () => {
     expect(content.name).toBe("Sravanthi Panga");
     expect(content.experience).toHaveLength(1);
     expect(content.experience[0].bullets).toContain(
-      "Built a Java Spring Boot claims intake API serving 2M requests a month.",
+      "Design, code, and debug production-quality full-stack features for customer-facing healthcare software and web services using Java, .NET, Spring Boot, React, and TypeScript.",
     );
     expect(JSON.stringify(content)).not.toContain("Kubernetes migration");
   });
@@ -105,24 +105,24 @@ describe("resume content assembly", () => {
     const other: TailoredBullet = {
       ...APPROVED,
       bulletId: "b4",
-      company: "Beacon Labs",
-      role: "Full Stack Developer",
-      suggestedText: "Shipped a React patient dashboard.",
+      company: "Context4 Healthcare - Naperville, IL",
+      role: "Full Stack Developer (Jan 2025 – May 2026)",
+      suggestedText: "Engineered robust back-end systems using Java 21 and Spring Boot 3.",
     };
     const content = buildResumeContent(TEST_PROFILE, [APPROVED, second, other]);
     expect(content.experience).toHaveLength(2);
-    expect(content.experience[0].company).toBe("Northwind Health");
+    expect(content.experience[0].company).toBe("Bamboo Health");
     expect(content.experience[0].bullets).toHaveLength(2);
-    expect(content.experience[1].company).toBe("Beacon Labs");
+    expect(content.experience[1].company).toBe("Context4 Healthcare - Naperville, IL");
   });
 
   it("carries the contact line, skills, summary, and education from the profile", () => {
     const content = buildResumeContent(TEST_PROFILE, [APPROVED]);
-    expect(content.contact).toBe("sravanthi@example.com · 815-555-0000");
+    expect(content.contact).toBe("sravanthipanga51@gmail.com | 8159950003 | Lisle, IL, United States");
     expect(content.skills).toContain("Java");
     expect(content.summary).toContain("Full-stack");
     expect(content.education).toEqual([
-      "M.S. Computer Science, Northern Illinois University, 2025",
+      "Masters in Computer Science | Northern Illinois University | 3.38 GPA",
     ]);
   });
 
@@ -136,7 +136,7 @@ describe("resume content assembly", () => {
       SAMPLE_PROFILE,
       SAMPLE_APPLICATIONS[0].tailoredBullets,
     );
-    expect(content.experience[0].bullets[0]).toContain("claims intake API");
+    expect(content.experience[0].bullets[0]).toContain("production-quality full-stack features");
   });
 });
 

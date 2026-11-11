@@ -74,13 +74,14 @@ export interface ResumeContent {
   skills: string[];
   experience: ResumeExperienceGroup[];
   education: string[];
+  certifications: string[];
 }
 
 /**
  * Assemble the tailored resume from the profile and the APPROVED tailored
  * bullets only. Unapproved bullets are excluded, and bullets are grouped
- * under their company/role in first-seen order. Education and the contact
- * line come from the profile when present (both are optional fields).
+ * under their company/role in first-seen order. Education, certifications,
+ * and the contact line come from the profile when present (all optional).
  */
 export function buildResumeContent(
   profile: ResumeProfile,
@@ -108,6 +109,7 @@ export function buildResumeContent(
     skills: profile.skills,
     experience,
     education: profile.education ?? [],
+    certifications: profile.certifications ?? [],
   };
 }
 
@@ -285,6 +287,12 @@ function buildResumePdf(
       w.addWrapped(`•  ${entry}`, 10.5, false, 14);
     }
   }
+  if (content.certifications.length > 0) {
+    w.addSection("Certifications");
+    for (const entry of content.certifications) {
+      w.addWrapped(`•  ${entry}`, 10.5, false, 14);
+    }
+  }
   return w.build();
 }
 
@@ -385,6 +393,17 @@ async function buildResumeDocx(
   if (content.education.length > 0) {
     children.push(new Paragraph({ heading: HeadingLevel.HEADING_1, text: "Education" }));
     for (const entry of content.education) {
+      children.push(
+        new Paragraph({
+          bullet: { level: 0 },
+          children: [new TextRun({ text: entry, size: 22 })],
+        }),
+      );
+    }
+  }
+  if (content.certifications.length > 0) {
+    children.push(new Paragraph({ heading: HeadingLevel.HEADING_1, text: "Certifications" }));
+    for (const entry of content.certifications) {
       children.push(
         new Paragraph({
           bullet: { level: 0 },

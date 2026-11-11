@@ -43,7 +43,8 @@ rule-based agent logic, no LLM key, and verified tests/build.
 
 - No real LLM or LangGraph integration — the agent is rule-based by design,
   and the README says so plainly, including its limits.
-- No invented resume facts: the sample profile is fictional ("Sam Carter",
-  invented companies) and clearly labelled SAMPLE.
+- No invented resume facts: the profile is Sravanthi Panga's real resume,
+  provided by her on Nov 11, 2026; the 3 sample *applications* are
+  fictional companies/JDs and are clearly labelled SAMPLE.
 - No git commit, GitHub push, or deployment — those steps are for the
   parent agent / the user.

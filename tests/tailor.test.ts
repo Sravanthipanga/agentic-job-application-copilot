@@ -17,9 +17,9 @@ describe("tailorBullets", () => {
   });
 
   it("reports JD keywords no profile skill covers as unclaimable", () => {
-    const { unclaimable } = tailorBullets(SAMPLE_PROFILE, ["Java", "Go", "Terraform"]);
+    const { unclaimable } = tailorBullets(SAMPLE_PROFILE, ["Java", "Go", "Rust"]);
     expect(unclaimable).toContain("Go");
-    expect(unclaimable).toContain("Terraform");
+    expect(unclaimable).toContain("Rust");
     expect(unclaimable).not.toContain("Java");
   });
 
@@ -27,7 +27,7 @@ describe("tailorBullets", () => {
     const { tailored } = tailorBullets(SAMPLE_PROFILE, ["Java", "Spring Boot", "AWS", "Go"]);
     for (const bullet of tailored) {
       expect(bullet.suggestedText).not.toContain("Go");
-      expect(bullet.suggestedText).not.toContain("Terraform");
+      expect(bullet.suggestedText).not.toContain("Rust");
     }
     // No suggested text mentions an employer or role that is not the bullet's own.
     const first = tailored.find((b) => b.bulletId === "b1");
@@ -35,12 +35,12 @@ describe("tailorBullets", () => {
   });
 
   it("suggestRephrasing surfaces a listed-but-unmentioned skill and leaves other text alone", () => {
-    const bullet = SAMPLE_PROFILE.bullets[1]; // Kubernetes/AWS migration, text mentions both
+    const bullet = SAMPLE_PROFILE.bullets[15]; // b16: AWS + Kubernetes, both mentioned in the text
     expect(suggestRephrasing(bullet, ["Kubernetes", "AWS"])).toBe(bullet.text);
-    const withHidden = { ...bullet, text: "Led the migration of a monolith reporting service, reducing deploy time from 2 hours to 15 minutes." };
+    const withHidden = { ...bullet, text: "Deploy and operate containerized services; collaborate in sprint planning to improve estimation accuracy and development flow." };
     const suggested = suggestRephrasing(withHidden, ["Kubernetes", "AWS"]);
     expect(suggested).toContain("Kubernetes");
     expect(suggested).toContain("AWS");
-    expect(suggested).toContain("reducing deploy time");
+    expect(suggested).toContain("estimation accuracy");
   });
 });

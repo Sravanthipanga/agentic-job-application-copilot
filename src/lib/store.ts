@@ -9,8 +9,11 @@ import type { Application, ResumeProfile } from "@/types";
  *  mismatch: the server snapshot is the seed data, and the client
  *  snapshot is loaded from localStorage on first access. */
 
-const PROFILE_KEY = "copilot-profile-v1";
-const APPS_KEY = "copilot-applications-v1";
+/* Storage keys are versioned: v2 was introduced when the seed profile
+ * changed from the fictional sample to Sravanthi Panga's real resume
+ * (Nov 11, 2026), so browsers holding the old v1 seed load the new one. */
+const PROFILE_KEY = "copilot-profile-v2";
+const APPS_KEY = "copilot-applications-v2";
 
 export interface StoreState {
   profile: ResumeProfile;

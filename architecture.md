@@ -31,7 +31,7 @@ route param with `useParams`, which cannot be prerendered in Next.js 16.
 | `tailor.ts` | Bullet relevance ranking, honest rephrasing, unclaimable-keyword detection |
 | `coverLetter.ts` | Template-based cover-letter generation from profile + approved bullets |
 | `validation.ts` | Zod schemas for profile, bullets, JD, application |
-| `seed.ts` | Fictional sample profile ("Sam Carter") + 3 sample applications |
+| `seed.ts` | Sravanthi Panga's real resume (provided Nov 11, 2026) + 3 fictional sample applications |
 | `store.ts` | localStorage-backed store via `useSyncExternalStore` (profile + applications) |
 | `export.ts` | Resume Markdown/HTML, cover-letter Markdown, tracker JSON/CSV downloads |
 

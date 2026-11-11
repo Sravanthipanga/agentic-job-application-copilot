@@ -3,7 +3,7 @@ import { extractKeywords, scoreApplication } from "@/lib/ats";
 import { SAMPLE_PROFILE } from "@/lib/seed";
 
 const JD =
-  "Senior Software Engineer at Acme Health. Strong Java and Spring Boot experience building microservices on AWS with Kubernetes. Work with PostgreSQL and Kafka in an Agile team. Terraform experience is a plus.";
+  "Senior Software Engineer at Acme Health. Strong Java and Spring Boot experience building microservices on AWS with Kubernetes. Work with PostgreSQL and Kafka in an Agile team. Go experience is a plus.";
 
 describe("extractKeywords", () => {
   it("finds curated skills mentioned in the JD", () => {
@@ -29,7 +29,7 @@ describe("scoreApplication", () => {
     const result = scoreApplication(JD, SAMPLE_PROFILE.skills);
     expect(result.keywords.length).toBeGreaterThan(0);
     expect(result.matched).toContain("Java");
-    expect(result.missing).toContain("Terraform");
+    expect(result.missing).toContain("Go");
     expect(result.score).toBeGreaterThan(0);
     expect(result.score).toBeLessThanOrEqual(100);
   });

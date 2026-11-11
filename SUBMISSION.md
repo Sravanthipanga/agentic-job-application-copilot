@@ -22,7 +22,7 @@ saved — then tracks the application.
 ## Also included
 
 - Dashboard tracker with stats, search, status filter, JSON/CSV export
-- Editable resume profile (skills, experience bullets) with JSON import/export
+- Editable resume profile (skills, experience bullets) with JSON import/export — pre-filled with Sravanthi Panga's real resume (provided Nov 11, 2026)
 - Application detail pages with status, notes, resume (.md/.html) and
   cover-letter exports
 - 3 fictional sample applications so the dashboard is not empty on first load
@@ -30,7 +30,7 @@ saved — then tracks the application.
 ## Engineering quality
 
 - Next.js 16 + TypeScript + Tailwind 4, Zod validation, Vitest + Testing
-  Library: 5 test files, **26 tests, all passing**
+  Library: 7 test files, **51 tests, all passing**
 - `npm run build` passes; `npm run lint` clean
 - All agent logic is deterministic and rule-based (`src/lib/`); no LLM key
   needed. Honesty invariants are enforced in code and covered by tests.

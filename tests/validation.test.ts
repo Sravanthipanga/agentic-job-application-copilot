@@ -31,10 +31,10 @@ describe("validation", () => {
 describe("export helpers", () => {
   it("resumeMarkdown uses only the approved bullets given", () => {
     const md = resumeMarkdown(SAMPLE_PROFILE, SAMPLE_APPLICATIONS[0].tailoredBullets, "Senior Software Engineer", "Acme Health");
-    expect(md).toContain("Sam Carter");
+    expect(md).toContain("Sravanthi Panga");
     expect(md).toContain("Acme Health");
-    expect(md).toContain("claims intake API");
-    expect(md).not.toContain("automated weekly reporting");
+    expect(md).toContain("production-quality full-stack features");
+    expect(md).not.toContain("Mentored junior developers");
   });
 
   it("trackerCsv has a header and one row per application", () => {

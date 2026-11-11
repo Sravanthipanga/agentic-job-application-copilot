@@ -8,25 +8,25 @@ describe("generateCoverLetter", () => {
     const letter = generateCoverLetter(SAMPLE_PROFILE, "Acme Health", "Senior Software Engineer", [], ["Java"]);
     expect(letter).toContain("Acme Health");
     expect(letter).toContain("Senior Software Engineer");
-    expect(letter).toContain("Sam Carter");
+    expect(letter).toContain("Sravanthi Panga");
   });
 
   it("includes evidence only from the approved bullets given", () => {
     const approved = [
       {
         bulletId: "b1",
-        company: "Northwind Health",
-        role: "Software Engineer",
-        originalText: "Built a Java Spring Boot claims intake API.",
-        suggestedText: "Built a Java Spring Boot claims intake API.",
+        company: "Bamboo Health",
+        role: "Software Engineer (Jun 2026 – Present)",
+        originalText: "Design, code, and debug production-quality full-stack features for customer-facing healthcare software and web services using Java, .NET, Spring Boot, React, and TypeScript.",
+        suggestedText: "Design, code, and debug production-quality full-stack features for customer-facing healthcare software and web services using Java, .NET, Spring Boot, React, and TypeScript.",
         matchedKeywords: ["Java"],
         relevance: 1,
         approved: true,
       },
     ];
     const letter = generateCoverLetter(SAMPLE_PROFILE, "Acme Health", "Senior Software Engineer", approved, ["Java"]);
-    expect(letter).toContain("claims intake API");
-    expect(letter).toContain("Northwind Health");
+    expect(letter).toContain("production-quality full-stack features");
+    expect(letter).toContain("Bamboo Health");
     expect(letter).not.toContain("Acme Health claims");
   });
 

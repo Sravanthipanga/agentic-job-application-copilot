@@ -76,8 +76,8 @@ export default function ProfilePage() {
           <h1 className="text-3xl font-bold tracking-tight">Resume Profile</h1>
           <p className="mt-1 text-zinc-600">
             This is the single source of truth the copilot tailors from. It never invents
-            employers, titles, or skills beyond what is here. Sample profile: Sam Carter
-            (fictional) — replace it with your own.
+            employers, titles, or skills beyond what is here. Pre-filled with
+            Sravanthi Panga&apos;s resume (provided Nov 11, 2026) — edit it here.
           </p>
         </div>
         <div className="flex gap-2">
@@ -105,11 +105,11 @@ export default function ProfilePage() {
             onClick={() => {
               resetToSample();
               setDraft(null);
-              setMessage("Sample profile restored.");
+              setMessage("Profile reset to Sravanthi Panga's resume.");
             }}
             className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium"
           >
-            Reset sample
+            Reset profile
           </button>
         </div>
       </div>
@@ -165,6 +165,20 @@ export default function ProfilePage() {
             }
             rows={2}
             placeholder={"M.S. Computer Science, Northern Illinois University, 2025"}
+            className="w-full rounded-lg border border-zinc-300 px-3 py-2"
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-sm font-medium">Certifications (optional — one entry per line)</span>
+          <textarea
+            value={(current.certifications ?? []).join("\n")}
+            onChange={(e) =>
+              update({
+                certifications: e.target.value.split("\n").map((s) => s.trim()).filter(Boolean),
+              })
+            }
+            rows={2}
+            placeholder={"SQL Foundations - Microsoft"}
             className="w-full rounded-lg border border-zinc-300 px-3 py-2"
           />
         </label>

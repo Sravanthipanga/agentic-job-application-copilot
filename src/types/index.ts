@@ -31,6 +31,8 @@ export interface ResumeProfile {
   contact?: string;
   /** Optional education entries, one per line, e.g. "M.S. Computer Science, Northern Illinois University, 2025". */
   education?: string[];
+  /** Optional certifications, e.g. "SQL Foundations - Microsoft". */
+  certifications?: string[];
 }
 
 export interface AtsBreakdown {
