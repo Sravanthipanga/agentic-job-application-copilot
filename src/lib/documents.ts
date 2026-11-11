@@ -359,8 +359,28 @@ export function buildResumeContent(
       experience.push({ company: bullet.company, role, bullets: [text], technologies: [] });
     }
   }
+
+  // Keep employer groups in profile order even when a confirmed
+  // suggested point is the only approved bullet for that employer.
+  // Within each group the sort above already puts profile bullets
+  // before suggested-confirmed bullets (suggested IDs have no profile
+  // order and therefore sort after profile bullets).
+  const employerOrder = new Map<string, number>();
+  profile.bullets.forEach((bullet, index) => {
+    const key = `${bullet.company}\u0000${formatRoleLine(bullet.role)}`;
+    if (!employerOrder.has(key)) employerOrder.set(key, index);
+  });
+  experience.sort(
+    (a, b) =>
+      (employerOrder.get(`${a.company}\u0000${a.role}`) ?? Number.POSITIVE_INFINITY) -
+      (employerOrder.get(`${b.company}\u0000${b.role}`) ?? Number.POSITIVE_INFINITY),
+  );
+
   // "Technologies Used:" per employer, from the profile bullets' own
-  // skills arrays (never invented), deduplicated, first-seen order.
+  // skills arrays, plus the explicit technologies attached to an
+  // APPROVED suggested-confirmed bullet. Unconfirmed drafts are not
+  // TailoredBullets and unapproved bullets were filtered out above, so
+  // neither can leak a technology into this line.
   const profileBulletById = new Map(profile.bullets.map((b) => [b.id, b]));
   for (const group of experience) {
     const seen = new Set<string>();
@@ -368,7 +388,11 @@ export function buildResumeContent(
     for (const bullet of approved) {
       if (bullet.company !== group.company || formatRoleLine(bullet.role) !== group.role) continue;
       const profileBullet = profileBulletById.get(bullet.bulletId);
-      for (const skill of profileBullet?.skills ?? []) {
+      const bulletTechnologies = [
+        ...(profileBullet?.skills ?? []),
+        ...(bullet.source === "suggested-confirmed" ? (bullet.technologies ?? []) : []),
+      ];
+      for (const skill of bulletTechnologies) {
         if (!seen.has(skill)) {
           seen.add(skill);
           technologies.push(skill);

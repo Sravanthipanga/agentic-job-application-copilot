@@ -70,6 +70,17 @@ export default function ApplicationDetailPage() {
 
       <section className="rounded-xl border border-zinc-200 bg-white p-6">
         <h2 className="text-xl font-semibold">ATS breakdown</h2>
+        {app.projectedAtsScore !== undefined &&
+          app.projectedAtsScore > app.atsScore && (
+            <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              <strong>
+                Projected: {app.projectedAtsScore}/100 if you confirm all suggested
+                points
+              </strong>
+              . This is a separate projected estimate, not this application&apos;s
+              ATS score.
+            </p>
+          )}
         <div className="mt-3">
           <h3 className="font-semibold text-green-700">Matched</h3>
           <p className="mt-1 text-sm">{app.matchedKeywords.join(", ") || "None"}</p>
@@ -108,6 +119,11 @@ export default function ApplicationDetailPage() {
                 <span className="text-zinc-500">
                   ({b.company} — {b.role})
                 </span>
+                {b.source === "suggested-confirmed" && (
+                  <span className="ml-2 rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-900">
+                    Confirmed suggested point
+                  </span>
+                )}
               </li>
             ))}
           </ul>

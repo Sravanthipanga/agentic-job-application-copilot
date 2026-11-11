@@ -4,12 +4,24 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import BulletSelector from "@/components/BulletSelector";
 import DownloadButtons from "@/components/DownloadButtons";
+import MissingKeywordSuggestions from "@/components/MissingKeywordSuggestions";
 import { scoreApplication } from "@/lib/ats";
 import { extractCompany, extractRole } from "@/lib/jd";
+import {
+  buildMissingKeywordSuggestions,
+  createMissingKeywordSuggestionDrafts,
+  getExperienceGroups,
+  projectedAtsScore,
+  suggestionToTailoredBullet,
+} from "@/lib/suggestions";
 import { tailorBullets } from "@/lib/tailor";
 import { generateCoverLetter } from "@/lib/coverLetter";
 import { addApplication, useStore } from "@/lib/store";
-import type { Application, TailoredBullet } from "@/types";
+import type {
+  Application,
+  MissingKeywordSuggestionDraft,
+  TailoredBullet,
+} from "@/types";
 
 const STEPS = ["Paste JD", "ATS Score", "Tailored Bullets", "Cover Letter", "Save"];
 
@@ -23,6 +35,8 @@ export default function NewApplicationPage() {
   const [jdLink, setJdLink] = useState("");
   const [error, setError] = useState("");
   const [bullets, setBullets] = useState<TailoredBullet[]>([]);
+  const [suggestionDrafts, setSuggestionDrafts] =
+    useState<MissingKeywordSuggestionDraft[]>([]);
   const [unclaimable, setUnclaimable] = useState<string[]>([]);
   const [coverLetter, setCoverLetter] = useState("");
   const [savedId, setSavedId] = useState<string | null>(null);
@@ -44,12 +58,40 @@ export default function NewApplicationPage() {
     setError("");
     const result = scoreApplication(jdText, profile.skills);
     const tailored = tailorBullets(profile, result.keywords);
+    const suggestions = buildMissingKeywordSuggestions(
+      result.missing,
+      profile,
+      jdText,
+    );
     setBullets(tailored.tailored);
+    setSuggestionDrafts(
+      createMissingKeywordSuggestionDrafts(suggestions, profile),
+    );
     setUnclaimable(tailored.unclaimable);
     setCoverLetter(
       generateCoverLetter(profile, company.trim(), role.trim(), tailored.tailored.filter((b) => b.approved), result.matched),
     );
     setStep(1);
+  }
+
+  function handleProfileBulletsChange(nextProfileBullets: TailoredBullet[]): void {
+    setBullets((current) => [
+      ...nextProfileBullets,
+      ...current.filter((bullet) => bullet.source === "suggested-confirmed"),
+    ]);
+  }
+
+  function handleSuggestionDraftsChange(
+    nextDrafts: MissingKeywordSuggestionDraft[],
+  ): void {
+    setSuggestionDrafts(nextDrafts);
+    const confirmed = nextDrafts
+      .map((draft) => suggestionToTailoredBullet(draft))
+      .filter((bullet): bullet is TailoredBullet => bullet !== null);
+    setBullets((current) => [
+      ...current.filter((bullet) => bullet.source !== "suggested-confirmed"),
+      ...confirmed,
+    ]);
   }
 
   function saveApplication(): void {
@@ -64,6 +106,9 @@ export default function NewApplicationPage() {
       jdText,
       jdLink: jdLink.trim(),
       atsScore: ats?.score ?? 0,
+      projectedAtsScore: ats
+        ? projectedAtsScore(ats, suggestionDrafts)
+        : undefined,
       matchedKeywords: ats?.matched ?? [],
       missingKeywords: ats?.missing ?? [],
       tailoredBullets: approved,
@@ -177,6 +222,16 @@ export default function NewApplicationPage() {
             in this JD are in your resume profile. This is not a real ATS screen — real systems
             also weigh formatting, experience depth, and recruiter review.
           </p>
+          {suggestionDrafts.length > 0 && (
+            <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              <strong>
+                Projected: {projectedAtsScore(ats, suggestionDrafts)}/100 if you confirm
+                all suggested points
+              </strong>
+              . This projected number is not your ATS score. Suggested points count only
+              after you replace their placeholders and confirm work you have actually done.
+            </p>
+          )}
           {ats.breakdown.length > 0 && (
             <table className="w-full text-left text-sm">
               <thead>
@@ -248,12 +303,23 @@ export default function NewApplicationPage() {
           </p>
           {unclaimable.length > 0 && (
             <p role="alert" className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              ⚠️ These JD keywords are not in your profile, so they cannot be honestly claimed:
-              <strong> {unclaimable.join(", ")}</strong>. Add real experience to your profile first
-              if you want to claim them.
+              ⚠️ These JD keywords are not in your profile:
+              <strong> {unclaimable.join(", ")}</strong>. The suggested points below are
+              drafts only and stay excluded unless you replace their placeholders and
+              confirm that you have actually done the work.
             </p>
           )}
-          <BulletSelector bullets={bullets} onChange={setBullets} />
+          <BulletSelector
+            bullets={bullets.filter(
+              (bullet) => bullet.source !== "suggested-confirmed",
+            )}
+            onChange={handleProfileBulletsChange}
+          />
+          <MissingKeywordSuggestions
+            drafts={suggestionDrafts}
+            experienceGroups={getExperienceGroups(profile)}
+            onChange={handleSuggestionDraftsChange}
+          />
           <div className="flex gap-3">
             <button
               type="button"

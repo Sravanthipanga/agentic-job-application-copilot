@@ -72,6 +72,36 @@ export interface TailoredBullet {
   matchedKeywords: string[];
   relevance: number;
   approved: boolean;
+  /** Where this bullet came from. Profile bullets are the default. A
+   *  "suggested-confirmed" bullet began as a missing-keyword draft and
+   *  was actively edited and confirmed by the user as work they have
+   *  actually done; it is never created automatically. */
+  source?: "profile" | "suggested-confirmed";
+  /** Additional technologies for a confirmed suggested point. These are
+   *  used only when the bullet itself is approved, so unconfirmed drafts
+   *  cannot leak into a Technologies Used line. */
+  technologies?: string[];
+}
+
+/** A deterministic draft for one JD keyword missing from the profile.
+ *  This is NOT a resume bullet and must never be rendered as one. It
+ *  becomes resume content only after the user replaces every bracketed
+ *  placeholder, chooses an employer/role, and confirms it. */
+export interface MissingKeywordSuggestion {
+  id: string;
+  keyword: string;
+  category: string;
+  draftText: string;
+  suggestedTechnologies: string[];
+}
+
+/** Editable UI state for a missing-keyword draft. `confirmed` is the
+ *  user's attestation that they have actually done the edited work. */
+export interface MissingKeywordSuggestionDraft extends MissingKeywordSuggestion {
+  text: string;
+  company: string;
+  role: string;
+  confirmed: boolean;
 }
 
 export interface Application {
@@ -83,6 +113,9 @@ export interface Application {
   jdText: string;
   jdLink: string;
   atsScore: number;
+  /** Separate hypothetical estimate if every missing-keyword draft were
+   *  edited and confirmed. This is never the application's ATS score. */
+  projectedAtsScore?: number;
   matchedKeywords: string[];
   missingKeywords: string[];
   tailoredBullets: TailoredBullet[];

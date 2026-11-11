@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { extractKeywords, scoreApplication } from "@/lib/ats";
+import {
+  extractKeywords,
+  profileSkillMatchesCatalogSkill,
+  scoreApplication,
+} from "@/lib/ats";
+import { SKILL_CATALOG } from "@/lib/skills";
 import { SAMPLE_PROFILE } from "@/lib/seed";
 
 const JD =
@@ -24,7 +29,51 @@ describe("extractKeywords", () => {
   });
 });
 
+const TWITCH_JD =
+  "Software Engineer II role requiring Python, TypeScript, JavaScript, REST API design, AWS, Terraform, CI/CD, testing, machine learning, security, and observability.";
+
+describe("profile alias matching", () => {
+  it("matches catalog keywords from longer or alias profile skill names", () => {
+    const result = scoreApplication(TWITCH_JD, SAMPLE_PROFILE.skills);
+    expect(result.matched).toEqual(
+      expect.arrayContaining([
+        "REST API",
+        "Testing",
+        "Security",
+        "Observability",
+      ]),
+    );
+  });
+
+  it("does not use a partial word inside another skill as evidence", () => {
+    const java = SKILL_CATALOG.find((skill) => skill.name === "Java");
+    if (!java) throw new Error("Java catalog entry missing");
+    expect(profileSkillMatchesCatalogSkill("JavaScript", java)).toBe(false);
+    expect(profileSkillMatchesCatalogSkill("Java", java)).toBe(true);
+    expect(profileSkillMatchesCatalogSkill("Java 17", java)).toBe(true);
+  });
+});
+
 describe("scoreApplication", () => {
+  it("scores the Twitch JD at 91 with only Machine Learning missing", () => {
+    const result = scoreApplication(TWITCH_JD, SAMPLE_PROFILE.skills);
+    expect(result.keywords).toEqual([
+      "Python",
+      "TypeScript",
+      "JavaScript",
+      "REST API",
+      "AWS",
+      "Terraform",
+      "CI/CD",
+      "Testing",
+      "Machine Learning",
+      "Security",
+      "Observability",
+    ]);
+    expect(result.matched).toHaveLength(10);
+    expect(result.missing).toEqual(["Machine Learning"]);
+    expect(result.score).toBe(91);
+  });
   it("scores matched / total and lists matched and missing keywords", () => {
     const result = scoreApplication(JD, SAMPLE_PROFILE.skills);
     expect(result.keywords.length).toBeGreaterThan(0);

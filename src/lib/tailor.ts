@@ -1,3 +1,4 @@
+import { profileMatchesKeyword } from "./ats";
 import type { ExperienceBullet, ResumeProfile, TailoredBullet } from "@/types";
 
 /**
@@ -44,8 +45,9 @@ export interface TailorResult {
 }
 
 export function tailorBullets(profile: ResumeProfile, jdKeywords: string[]): TailorResult {
-  const profileSkillSet = new Set(profile.skills.map((s) => s.toLowerCase()));
-  const unclaimable = jdKeywords.filter((k) => !profileSkillSet.has(k.toLowerCase()));
+  const unclaimable = jdKeywords.filter(
+    (k) => !profileMatchesKeyword(profile.skills, k),
+  );
 
   // Ranked by relevance for *selection* in the UI only. The tie-break
   // is profile order — never alphabetical (an alphabetical tie-break
