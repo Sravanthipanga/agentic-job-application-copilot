@@ -452,7 +452,7 @@ function pdfWriter(doc: PdfWriter, startY: number): {
     doc.setFont("helvetica", bold ? "bold" : "normal");
     doc.setFontSize(size);
     if (url && !blackLink) doc.setTextColor(...LINK_BLUE);
-    else doc.setTextColor(30, 30, 30);
+    else doc.setTextColor(0, 0, 0);
   }
 
   function addWrapped(text: string, size: number, bold: boolean, indent = 0): void {
@@ -515,11 +515,11 @@ function pdfWriter(doc: PdfWriter, startY: number): {
     y += 10;
     doc.setFont("helvetica", "bold");
     doc.setFontSize(RESUME_FORMAT.headingSize);
-    doc.setTextColor(30, 30, 30);
+    doc.setTextColor(0, 0, 0);
     doc.text(title.toUpperCase(), MARGIN, y);
     // Thin horizontal rule directly under EVERY section heading, as on
     // the reference resume.
-    doc.setDrawColor(30, 30, 30);
+    doc.setDrawColor(0, 0, 0);
     doc.setLineWidth(0.75);
     doc.line(MARGIN, y + 3, MARGIN + contentWidth, y + 3);
     y += 12;
@@ -598,7 +598,7 @@ function drawContactLines(doc: PdfWriter, contact: string, startY: number): numb
         const tokenWidth = doc.getTextWidth(token.text);
         if (token.url) {
           if (token.blackLink) {
-            doc.setTextColor(30, 30, 30);
+            doc.setTextColor(0, 0, 0);
             doc.textWithLink(token.text, x, y, { url: token.url });
           } else {
             doc.setTextColor(...LINK_BLUE);
@@ -607,9 +607,9 @@ function drawContactLines(doc: PdfWriter, contact: string, startY: number): numb
             doc.setLineWidth(0.5);
             doc.line(x, y + 2, x + tokenWidth, y + 2);
           }
-          doc.setTextColor(30, 30, 30);
+          doc.setTextColor(0, 0, 0);
         } else {
-          doc.setTextColor(30, 30, 30);
+          doc.setTextColor(0, 0, 0);
           doc.text(token.text, x, y);
         }
         x += tokenWidth + (index < lineTokens.length - 1 ? doc.getTextWidth(" ") : 0);
@@ -640,12 +640,12 @@ function buildResumePdf(
   let y = MARGIN + 20;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(RESUME_FORMAT.nameSize);
-  doc.setTextColor(20, 20, 20);
+  doc.setTextColor(0, 0, 0);
   doc.text(content.name, MARGIN + contentWidth / 2, y, { align: "center" });
   y += 20;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(RESUME_FORMAT.contactSize);
-  doc.setTextColor(30, 30, 30);
+  doc.setTextColor(0, 0, 0);
   doc.text(content.title, MARGIN + contentWidth / 2, y, { align: "center" });
   y += 18;
   y = drawContactLines(doc, content.contact, y);
@@ -721,15 +721,15 @@ function buildCoverLetterPdf(
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(14);
-  doc.setTextColor(20, 20, 20);
+  doc.setTextColor(0, 0, 0);
   doc.text(content.name, MARGIN, MARGIN + 16);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  doc.setTextColor(80, 80, 80);
+  doc.setTextColor(0, 0, 0);
   doc.text(content.title, MARGIN, MARGIN + 32);
   doc.text(content.date, MARGIN, MARGIN + 48);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(20, 20, 20);
+  doc.setTextColor(0, 0, 0);
   doc.text(`${content.company} — ${content.role}`, MARGIN, MARGIN + 68);
 
   for (const paragraph of content.paragraphs) {
@@ -764,7 +764,7 @@ async function buildResumeDocx(content: ResumeContent): Promise<Blob> {
       spacing: { before: 240, after: 80 },
       // Thin horizontal rule directly under EVERY section heading, as on
       // the reference resume.
-      border: { bottom: { color: "1E1E1E", space: 1, style: BorderStyle.SINGLE, size: 6 } },
+      border: { bottom: { color: "000000", space: 1, style: BorderStyle.SINGLE, size: 6 } },
       children: [calibri(text.toUpperCase(), { bold: true, size: RESUME_FORMAT.headingSize * 2 })],
     });
 
@@ -916,7 +916,7 @@ async function buildCoverLetterDocx(content: CoverLetterContent): Promise<Blob> 
 
   const children: InstanceType<typeof Paragraph>[] = [
     new Paragraph({ children: [new TextRun({ text: content.name, bold: true, size: 28 })] }),
-    new Paragraph({ children: [new TextRun({ text: content.title, size: 22, color: "666666" })] }),
+    new Paragraph({ children: [new TextRun({ text: content.title, size: 22, color: "000000" })] }),
     new Paragraph({ children: [new TextRun({ text: content.date, size: 22 })] }),
     new Paragraph({
       children: [new TextRun({ text: `${content.company} — ${content.role}`, bold: true, size: 22 })],
