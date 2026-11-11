@@ -36,7 +36,10 @@ Then track every application in one place.
      (Languages, Frameworks, Cloud & DevOps, Data, Practices).
   3. **Tailored Bullets** — your existing bullets ranked by relevance to the
      JD. Each suggested rephrasing only surfaces a skill the bullet already
-     claims. Approve (checkbox) and edit each bullet before saving. JD
+     claims. Approve (checkbox) and edit each bullet before saving — or use
+     "Select all" above the list to approve every bullet at once (it shows
+     "Deselect all" once all are selected, and an indeterminate state for a
+     partial selection). JD
      keywords no bullet can honestly claim are flagged as unclaimable.
   4. **Cover Letter** — a draft built from a template filled with your
      profile, the company/role, and your approved bullets' evidence. Fully
@@ -137,17 +140,31 @@ Calibri/Cambria). Its wording was not copied — only sizes, bold, and
 alignment were adopted:
 
 - **Name:** bold 20pt, centered. **Title:** 11pt, centered.
-- **Contact line:** 11pt, centered — "Email: … | Mobile: … |
-  Location: … | LinkedIn | GitHub | Personal Website", with the email
-  (`mailto:`) and the LinkedIn, GitHub, and portfolio URLs as real
-  clickable hyperlinks (blue + underlined) in both PDF and Word.
+- **Contact:** exactly two centered lines, 11pt — line 1 "Email: … |
+  Mobile: … | Location: …" (the email is a black `mailto:` link),
+  line 2 "Personal Website | GitHub | LinkedIn" (all three blue +
+  underlined + clickable) in both PDF and Word. The URLs are parsed
+  from the profile contact string, never invented.
 - **Section headings** (Professional Summary, Skills, Work Experience,
-  Certifications, Education): bold 12pt, ALL CAPS, left-aligned, no
-  underlines — the same style on every section.
+  Certifications, Education): bold 12pt, ALL CAPS, left-aligned, with
+  a thin horizontal rule directly underneath EVERY heading in both
+  PDF (jsPDF line) and Word (bottom border on the heading paragraph).
+- **Professional Summary:** the profile's 7 original summary bullets,
+  rendered as 11pt bullets; the summary paragraph is used only when
+  no summary bullets are set. Edit the bullets on the Resume Profile
+  page (one per line).
+- **Skills:** grouped by category, one paragraph per group with a bold
+  label — "Programming Languages:", "Frameworks and Libraries:", "API
+  Development:", "Microservices and Architecture:", "Data Management:",
+  "Cloud Technologies:", "Containerization and Orchestration:",
+  "Infrastructure as Code:", "Monitoring & Logging:", "Testing and
+  Quality Assurance:", "Soft Skills:", "Performance Optimization:" —
+  exactly the profile's 12 groups, with no skills moved between
+  categories. Edit groups on the Resume Profile page (one per line as
+  "Label: skill, skill, …"). The flat skill list is used only when no
+  groups are set.
 - **Company name:** bold 11pt. **Job title + dates:** bold 10pt.
-- **Body bullets:** 11pt, "•" with a hanging indent. Skills are a
-  wrapped 11pt paragraph (the profile's flat skill list, no invented
-  categories). Each employer ends with a "Technologies Used:" line
+- **Body bullets:** 11pt, "•" with a hanging indent. Each employer ends with a "Technologies Used:" line
   (bold label, 11pt) built from that employer's bullets' own skills.
 - **Fonts:** Word files use the real Calibri (name/headings/company/
   title) and Cambria (body) fonts; PDFs use Helvetica as the closest

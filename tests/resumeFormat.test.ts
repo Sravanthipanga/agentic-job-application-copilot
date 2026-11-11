@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   RESUME_FORMAT,
   buildResumeContent,
+  contactLines,
   contactSegments,
   generateResumeDocxBlob,
   generateResumePdfBlob,
@@ -86,7 +87,7 @@ describe("contact links", () => {
     const parsed = parseContact(SAMPLE_PROFILE.contact ?? "");
     expect(parsed.email).toBe("sravanthipanga51@gmail.com");
     expect(parsed.phone).toBe("8159950003");
-    expect(parsed.location).toBe("Lisle, IL, United States");
+    expect(parsed.location).toBe("Illinois, United States");
     expect(parsed.links).toEqual([
       { label: "LinkedIn", url: "https://www.linkedin.com/in/sravanthi-panga-174382204/" },
       { label: "GitHub", url: "https://github.com/Sravanthipanga" },
@@ -109,6 +110,154 @@ describe("contact links", () => {
       "GitHub",
       "Personal Website",
     ]);
+  });
+});
+
+describe("reference-format fixes (second screenshot vs generated resume)", () => {
+  const EXPECTED_SUMMARY_BULLETS = [
+    "6+ years of experience as a Software Engineer specializing in full-stack development and back-end systems and processes, with a strong focus on developing and maintaining cost systems and ensuring seamless API integration with local databases.",
+    "Proven expertise in structured software development processes, applying best practices to deliver quality and consistency across projects while collaborating effectively with product and engineering teams.",
+    "Hands-on experience in Node.js and Next.js/React, with a solid understanding of SQL and ORM tools, particularly PostgreSQL; also strong in Java 17/21, Spring Boot, Python, TypeScript, Apache Kafka, and AWS/Azure cloud environments.",
+    "Skilled in designing fault-tolerant systems with a focus on security and scalability, incorporating OAuth2, OpenID Connect, and JWT authentication; experienced with HL7/FHIR-based integrations for healthcare claims intake and review in HIPAA-regulated environments.",
+    "Developed and maintained production backend and full-stack applications, designing scalable services, APIs, and distributed components for enterprise healthcare platforms.",
+    "Experienced in customer implementation and problem-solving using advanced technologies, including Palantir Foundry data integration, ontologies, and model orchestration.",
+    "Demonstrated ability to create mobile-responsive UIs that function seamlessly across various browsers and devices; recognized for technical leadership and mentoring capabilities.",
+  ];
+
+  const EXPECTED_SKILL_GROUP_LABELS = [
+    "Programming Languages",
+    "Frameworks and Libraries",
+    "API Development",
+    "Microservices and Architecture",
+    "Data Management",
+    "Cloud Technologies",
+    "Containerization and Orchestration",
+    "Infrastructure as Code",
+    "Monitoring & Logging",
+    "Testing and Quality Assurance",
+    "Soft Skills",
+    "Performance Optimization",
+  ];
+
+  it("1. summary renders as her 7 original bullets, verbatim and in order", () => {
+    const content = buildResumeContent(SAMPLE_PROFILE, allApproved());
+    expect(content.summaryBullets).toEqual(EXPECTED_SUMMARY_BULLETS);
+    expect(SAMPLE_PROFILE.summaryBullets).toHaveLength(7);
+  });
+
+  it("1. summary bullets appear in the Word file; paragraph is the fallback only", async () => {
+    const blob = await generateResumeDocxBlob(SAMPLE_PROFILE, allApproved());
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    const documentXml = unzipEntry(bytes, "word/document.xml");
+    for (const bullet of EXPECTED_SUMMARY_BULLETS) {
+      expect(documentXml).toContain(bullet);
+    }
+    // Fallback: without summaryBullets the summary paragraph is rendered.
+    const fallback = await generateResumeDocxBlob(
+      { ...SAMPLE_PROFILE, summaryBullets: undefined },
+      allApproved(),
+    );
+    const fallbackXml = unzipEntry(new Uint8Array(await fallback.arrayBuffer()), "word/document.xml");
+    expect(fallbackXml).toContain("Full-stack Software Engineer with 6+ years");
+  });
+
+  it("2. skills render as 12 labelled groups with the correct skills in each", () => {
+    const content = buildResumeContent(SAMPLE_PROFILE, allApproved());
+    expect(content.skillGroups).toHaveLength(12);
+    expect(content.skillGroups.map((g) => g.label)).toEqual(EXPECTED_SKILL_GROUP_LABELS);
+    const byLabel = new Map(content.skillGroups.map((g) => [g.label, g.skills]));
+    expect(byLabel.get("Programming Languages")).toEqual([
+      "Java 17", "Java 21", "JavaScript", "SQL", "HTML", "CSS", "TypeScript", "Python", "React", "PySpark", "Linux",
+    ]);
+    expect(byLabel.get("Microservices and Architecture")).toContain("Saga Pattern");
+    expect(byLabel.get("Microservices and Architecture")).toContain("Outbox Pattern");
+    expect(byLabel.get("Monitoring & Logging")).toContain("Prometheus");
+    expect(byLabel.get("Monitoring & Logging")).toContain("Incident Response");
+    expect(byLabel.get("Performance Optimization")).toContain("Fault Tolerance");
+    expect(byLabel.get("Cloud Technologies")).toEqual([
+      "AWS", "Amazon EKS", "Amazon ECS", "Amazon RDS", "Amazon MSK", "Azure AKS", "Azure Key Vault", "Google GKE",
+    ]);
+  });
+
+  it("2. grouped skills with bold labels appear in the Word file; flat list is the fallback", async () => {
+    const blob = await generateResumeDocxBlob(SAMPLE_PROFILE, allApproved());
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    const documentXml = unzipEntry(bytes, "word/document.xml");
+    expect(documentXml).toContain("Programming Languages:");
+    expect(documentXml).toContain("Frameworks and Libraries:");
+    expect(documentXml).toContain("Monitoring &amp; Logging:");
+    expect(documentXml).toContain("Performance Optimization:");
+    const fallback = await generateResumeDocxBlob(
+      { ...SAMPLE_PROFILE, skillGroups: undefined },
+      allApproved(),
+    );
+    const fallbackXml = unzipEntry(new Uint8Array(await fallback.arrayBuffer()), "word/document.xml");
+    expect(fallbackXml).toContain("Java 17, Java 21");
+  });
+
+  it("3. every section heading has a rule underneath in the Word file", async () => {
+    const blob = await generateResumeDocxBlob(SAMPLE_PROFILE, allApproved());
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    const documentXml = unzipEntry(bytes, "word/document.xml");
+    // One bottom border per heading: Summary, Skills, Work Experience,
+    // Certifications, Education. (Count opening tags only — the closing
+    // </w:pBdr> tags would double the count.)
+    expect(documentXml.match(/<w:pBdr>/g)?.length).toBe(5);
+    expect(documentXml).toContain("w:bottom");
+  });
+
+  it("3. the PDF draws horizontal rules under the headings", async () => {
+    const blob = await generateResumePdfBlob(SAMPLE_PROFILE, allApproved());
+    const text = new TextDecoder("latin1").decode(await blob.arrayBuffer());
+    // jsPDF line() strokes a path ("… l\nS" across two lines); headings
+    // plus link underlines produce several — the rules must be among them.
+    expect((text.match(/ l\nS/g) ?? []).length).toBeGreaterThanOrEqual(5);
+    for (const heading of ["PROFESSIONAL SUMMARY", "SKILLS", "WORK EXPERIENCE", "CERTIFICATIONS", "EDUCATION"]) {
+      expect(text).toContain(heading);
+    }
+  });
+
+  it("4. contact renders as two lines: email line, then Personal Website | GitHub | LinkedIn", () => {
+    const { line1, line2 } = contactLines(SAMPLE_PROFILE.contact ?? "");
+    const line1Text = line1.map((s) => s.text).join("");
+    const line2Text = line2.map((s) => s.text).join("");
+    expect(line1Text).toBe(
+      "Email: sravanthipanga51@gmail.com | Mobile: 8159950003 | Location: Illinois, United States",
+    );
+    expect(line2Text).toBe("Personal Website | GitHub | LinkedIn");
+    expect(line2.filter((s) => s.url).map((s) => s.url)).toEqual([
+      "https://pangasravanthi.netlify.app/",
+      "https://github.com/Sravanthipanga",
+      "https://www.linkedin.com/in/sravanthi-panga-174382204/",
+    ]);
+    const emailSegment = line1.find((s) => s.url === "mailto:sravanthipanga51@gmail.com");
+    expect(emailSegment).toBeDefined();
+    expect(emailSegment?.black).toBe(true);
+  });
+
+  it("4. the Word file has two centered contact lines with the black mailto email", async () => {
+    const blob = await generateResumeDocxBlob(SAMPLE_PROFILE, allApproved());
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    const documentXml = unzipEntry(bytes, "word/document.xml");
+    const relsXml = unzipEntry(bytes, "word/_rels/document.xml.rels");
+    // Name, title, contact line 1, contact line 2 are all centered.
+    expect((documentXml.match(/w:val="center"/g) ?? []).length).toBeGreaterThanOrEqual(4);
+    expect(relsXml).toContain("mailto:sravanthipanga51@gmail.com");
+    expect(relsXml).toContain("https://pangasravanthi.netlify.app/");
+    expect(relsXml).toContain("https://github.com/Sravanthipanga");
+    expect(relsXml).toContain("https://www.linkedin.com/in/sravanthi-panga-174382204/");
+    // Line 2 order in the document: Personal Website, then GitHub, then LinkedIn.
+    expect(documentXml.indexOf("Personal Website")).toBeLessThan(documentXml.indexOf("GitHub"));
+    expect(documentXml.indexOf("GitHub")).toBeLessThan(documentXml.indexOf("LinkedIn"));
+  });
+
+  it("4. the PDF still carries all four contact links as /URI annotations", async () => {
+    const blob = await generateResumePdfBlob(SAMPLE_PROFILE, allApproved());
+    const text = new TextDecoder("latin1").decode(await blob.arrayBuffer());
+    expect(text).toContain("mailto:sravanthipanga51@gmail.com");
+    expect(text).toContain("https://pangasravanthi.netlify.app/");
+    expect(text).toContain("https://github.com/Sravanthipanga");
+    expect(text).toContain("https://www.linkedin.com/in/sravanthi-panga-174382204/");
   });
 });
 

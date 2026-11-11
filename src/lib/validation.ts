@@ -9,11 +9,18 @@ export const bulletSchema = z.object({
   skills: z.array(z.string().trim().min(1)).max(12),
 });
 
+export const skillGroupSchema = z.object({
+  label: z.string().trim().min(1, "Skill group label is required").max(120),
+  skills: z.array(z.string().trim().min(1)).max(40),
+});
+
 export const profileSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(120),
   title: z.string().trim().min(1, "Title is required").max(120),
   summary: z.string().trim().max(1000),
+  summaryBullets: z.array(z.string().trim().min(1).max(1000)).max(20).optional(),
   skills: z.array(z.string().trim().min(1)).max(150),
+  skillGroups: z.array(skillGroupSchema).max(20).optional(),
   bullets: z.array(bulletSchema).max(100),
   contact: z.string().trim().max(300).optional(),
   education: z.array(z.string().trim().min(1)).max(10).optional(),

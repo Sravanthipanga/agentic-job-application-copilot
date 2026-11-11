@@ -21,11 +21,25 @@ export interface ExperienceBullet {
   skills: string[];
 }
 
+export interface SkillGroup {
+  label: string;
+  skills: string[];
+}
+
 export interface ResumeProfile {
   name: string;
   title: string;
   summary: string;
+  /** The 7 original Professional Summary bullets, verbatim, in order.
+   *  When present, the resume renders the summary as bullets; the
+   *  `summary` paragraph is the fallback / ATS text. */
+  summaryBullets?: string[];
   skills: string[];
+  /** Skills grouped by category, as on the reference resume, e.g.
+   *  { label: "Programming Languages", skills: ["Java 17", ...] }.
+   *  When present, the resume renders Skills grouped with bold labels;
+   *  the flat `skills` list is the fallback. */
+  skillGroups?: SkillGroup[];
   bullets: ExperienceBullet[];
   /** Optional contact line shown on the resume, e.g. "email · phone · LinkedIn". */
   contact?: string;

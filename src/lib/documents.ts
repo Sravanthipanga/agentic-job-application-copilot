@@ -1,4 +1,4 @@
-import type { ResumeProfile, TailoredBullet } from "@/types";
+import type { ResumeProfile, SkillGroup, TailoredBullet } from "@/types";
 
 /**
  * Resume Maker + Cover Letter Maker.
@@ -18,8 +18,16 @@ import type { ResumeProfile, TailoredBullet } from "@/types";
  * Calibri/Cambria). Its wording was NOT copied; only sizes, bold, and
  * alignment were adopted:
  *   Name: Calibri-Bold 20pt, centered
- *   Contact line: 11pt, centered, links clickable
- *   Section headings: bold 12pt, ALL CAPS, left-aligned, no underlines
+ *   Contact: TWO centered lines, 11pt — line 1 "Email: … | Mobile: … |
+ *     Location: …" (email is a black mailto: link), line 2 "Personal
+ *     Website | GitHub | LinkedIn" (all three blue + underlined links)
+ *   Section headings: bold 12pt, ALL CAPS, left-aligned, with a thin
+ *     horizontal rule directly underneath EVERY heading
+ *   Professional Summary: 7 bullets, 11pt (profile.summaryBullets;
+ *     the summary paragraph is the fallback only)
+ *   Skills: grouped by category, one paragraph per group with a BOLD
+ *     label, e.g. "Programming Languages: Java 17, Java 21, …"
+ *     (profile.skillGroups; the flat skill list is the fallback only)
  *   Company name: bold 11pt, left-aligned
  *   Job title + dates: bold 10pt
  *   Body bullets: 11pt, "•" with hanging indent, left-aligned
@@ -156,6 +164,52 @@ export interface ContactSegment {
   text: string;
   /** When present, this segment is a clickable hyperlink to this URL. */
   url?: string;
+  /** Render a linked segment in black instead of link blue (the email). */
+  black?: boolean;
+}
+
+/** The reference resume's contact layout: exactly two centered lines.
+ *  Line 1: "Email: <email> | Mobile: <phone> | Location: <place>" with
+ *  the email as a black mailto: link. Line 2: "Personal Website |
+ *  GitHub | LinkedIn" (all three blue + underlined links, in that
+ *  order). URLs are parsed from the profile contact string, never
+ *  invented. */
+export interface ContactLines {
+  line1: ContactSegment[];
+  line2: ContactSegment[];
+}
+
+const LINK_LABEL_ORDER = ["Personal Website", "GitHub", "LinkedIn"];
+
+export function contactLines(contact: string): ContactLines {
+  const parsed = parseContact(contact);
+  const line1: ContactSegment[] = [];
+  const addSeparator = (segments: ContactSegment[]): void => {
+    if (segments.length > 0) segments.push({ text: " | " });
+  };
+  if (parsed.email) {
+    line1.push(
+      { text: "Email: " },
+      { text: parsed.email, url: `mailto:${parsed.email}`, black: true },
+    );
+  }
+  if (parsed.phone) {
+    addSeparator(line1);
+    line1.push({ text: "Mobile: " }, { text: parsed.phone });
+  }
+  if (parsed.location) {
+    addSeparator(line1);
+    line1.push({ text: "Location: " }, { text: parsed.location });
+  }
+  const line2: ContactSegment[] = [];
+  const orderedLinks = [...parsed.links].sort(
+    (a, b) => LINK_LABEL_ORDER.indexOf(a.label) - LINK_LABEL_ORDER.indexOf(b.label),
+  );
+  for (const link of orderedLinks) {
+    addSeparator(line2);
+    line2.push({ text: link.label, url: link.url });
+  }
+  return { line1, line2 };
 }
 
 /**
@@ -206,7 +260,11 @@ export interface ResumeContent {
   title: string;
   contact: string;
   summary: string;
+  /** The 7 original summary bullets, when the profile has them. */
+  summaryBullets: string[];
   skills: string[];
+  /** Skills grouped by category, when the profile has them. */
+  skillGroups: SkillGroup[];
   experience: ResumeExperienceGroup[];
   education: string[];
   certifications: string[];
@@ -274,7 +332,11 @@ export function buildResumeContent(
     title: profile.title,
     contact: profile.contact ?? "",
     summary: profile.summary,
+    summaryBullets: (profile.summaryBullets ?? []).map((s) => s.trim()).filter(Boolean),
     skills: profile.skills,
+    skillGroups: (profile.skillGroups ?? [])
+      .map((g) => ({ label: g.label.trim(), skills: g.skills.map((s) => s.trim()).filter(Boolean) }))
+      .filter((g) => g.label && g.skills.length > 0),
     experience,
     education: profile.education ?? [],
     certifications: profile.certifications ?? [],
@@ -363,6 +425,8 @@ interface PdfSegment {
   text: string;
   bold: boolean;
   url?: string;
+  /** A linked segment rendered in black (the email), not link blue. */
+  blackLink?: boolean;
 }
 
 function pdfWriter(doc: PdfWriter, startY: number): {
@@ -384,10 +448,10 @@ function pdfWriter(doc: PdfWriter, startY: number): {
     }
   }
 
-  function setStyle(size: number, bold: boolean, url?: string): void {
+  function setStyle(size: number, bold: boolean, url?: string, blackLink?: boolean): void {
     doc.setFont("helvetica", bold ? "bold" : "normal");
     doc.setFontSize(size);
-    if (url) doc.setTextColor(...LINK_BLUE);
+    if (url && !blackLink) doc.setTextColor(...LINK_BLUE);
     else doc.setTextColor(30, 30, 30);
   }
 
@@ -402,7 +466,7 @@ function pdfWriter(doc: PdfWriter, startY: number): {
     const tokens: PdfSegment[] = [];
     for (const segment of segments) {
       for (const word of segment.text.split(/\s+/).filter(Boolean)) {
-        tokens.push({ text: word, bold: segment.bold, url: segment.url });
+        tokens.push({ text: word, bold: segment.bold, url: segment.url, blackLink: segment.blackLink });
       }
     }
     // Greedy line building, measured with the real font.
@@ -410,7 +474,7 @@ function pdfWriter(doc: PdfWriter, startY: number): {
     let line: PdfSegment[] = [];
     let lineWidth = 0;
     for (const token of tokens) {
-      setStyle(size, token.bold, token.url);
+      setStyle(size, token.bold, token.url, token.blackLink);
       const wordWidth = doc.getTextWidth(token.text);
       const spaceWidth = line.length > 0 ? doc.getTextWidth(" ") : 0;
       if (line.length > 0 && lineWidth + spaceWidth + wordWidth > maxWidth) {
@@ -428,13 +492,15 @@ function pdfWriter(doc: PdfWriter, startY: number): {
     for (const lineTokens of lines) {
       let x = MARGIN + indent;
       lineTokens.forEach((token, index) => {
-        setStyle(size, token.bold, token.url);
+        setStyle(size, token.bold, token.url, token.blackLink);
         const width = doc.getTextWidth(token.text);
         if (token.url) {
           doc.textWithLink(token.text, x, y, { url: token.url });
-          doc.setDrawColor(...LINK_BLUE);
-          doc.setLineWidth(0.5);
-          doc.line(x, y + 2, x + width, y + 2);
+          if (!token.blackLink) {
+            doc.setDrawColor(...LINK_BLUE);
+            doc.setLineWidth(0.5);
+            doc.line(x, y + 2, x + width, y + 2);
+          }
         } else {
           doc.text(token.text, x, y);
         }
@@ -451,7 +517,12 @@ function pdfWriter(doc: PdfWriter, startY: number): {
     doc.setFontSize(RESUME_FORMAT.headingSize);
     doc.setTextColor(30, 30, 30);
     doc.text(title.toUpperCase(), MARGIN, y);
-    y += 10;
+    // Thin horizontal rule directly under EVERY section heading, as on
+    // the reference resume.
+    doc.setDrawColor(30, 30, 30);
+    doc.setLineWidth(0.75);
+    doc.line(MARGIN, y + 3, MARGIN + contentWidth, y + 3);
+    y += 12;
   }
 
   return {
@@ -466,72 +537,91 @@ function pdfWriter(doc: PdfWriter, startY: number): {
   };
 }
 
-/** Draw the contact line centered, wrapping across lines if needed, with
- *  email/LinkedIn/GitHub/portfolio as real clickable links (blue +
- *  underlined). Returns the y just below the last contact line. */
+/** Draw the contact as exactly two centered lines, as on the reference
+ *  resume — line 1 "Email: <email> | Mobile: <phone> | Location: <place>"
+ *  (email is a black mailto: link), line 2 "Personal Website | GitHub |
+ *  LinkedIn" (all three blue + underlined + clickable). Each line wraps
+ *  if it ever exceeds the content width. Returns the y just below the
+ *  last contact line. */
 function drawContactLines(doc: PdfWriter, contact: string, startY: number): number {
   const pageWidth = doc.internal.pageSize.getWidth();
   const contentWidth = pageWidth - MARGIN * 2;
-  const segments = contactSegments(contact);
-  if (segments.length === 0) return startY;
+  const { line1, line2 } = contactLines(contact);
+  const lines = [line1, line2].filter((segments) => segments.length > 0);
+  if (lines.length === 0) return startY;
 
-  // Tokenise: plain segments split into words, link segments stay whole.
-  const tokens: PdfSegment[] = [];
-  for (const segment of segments) {
-    if (segment.url) {
-      tokens.push({ text: segment.text, bold: false, url: segment.url });
-    } else {
-      for (const word of segment.text.split(/\s+/).filter(Boolean)) {
-        tokens.push({ text: word, bold: false });
-      }
-    }
-  }
-  // Greedy lines, measured at the contact size.
   doc.setFont("helvetica", "normal");
   doc.setFontSize(RESUME_FORMAT.contactSize);
-  const lines: PdfSegment[][] = [];
-  let line: PdfSegment[] = [];
-  let lineWidth = 0;
-  for (const token of tokens) {
-    const wordWidth = doc.getTextWidth(token.text);
-    const spaceWidth = line.length > 0 ? doc.getTextWidth(" ") : 0;
-    if (line.length > 0 && lineWidth + spaceWidth + wordWidth > contentWidth) {
-      lines.push(line);
-      line = [];
-      lineWidth = 0;
+
+  /** Draw one centered line of segments, wrapping if needed. */
+  function drawLine(segments: ContactSegment[], startLineY: number): number {
+    // Tokenise: plain segments split into words, link segments stay whole.
+    const tokens: PdfSegment[] = [];
+    for (const segment of segments) {
+      if (segment.url) {
+        tokens.push({ text: segment.text, bold: false, url: segment.url, blackLink: segment.black });
+      } else {
+        for (const word of segment.text.split(/\s+/).filter(Boolean)) {
+          tokens.push({ text: word, bold: false });
+        }
+      }
     }
-    if (line.length > 0) lineWidth += spaceWidth;
-    line.push(token);
-    lineWidth += wordWidth;
+    // Greedy lines, measured at the contact size.
+    const wrapped: PdfSegment[][] = [];
+    let line: PdfSegment[] = [];
+    let lineWidth = 0;
+    for (const token of tokens) {
+      const wordWidth = doc.getTextWidth(token.text);
+      const spaceWidth = line.length > 0 ? doc.getTextWidth(" ") : 0;
+      if (line.length > 0 && lineWidth + spaceWidth + wordWidth > contentWidth) {
+        wrapped.push(line);
+        line = [];
+        lineWidth = 0;
+      }
+      if (line.length > 0) lineWidth += spaceWidth;
+      line.push(token);
+      lineWidth += wordWidth;
+    }
+    if (line.length > 0) wrapped.push(line);
+
+    let y = startLineY;
+    for (const lineTokens of wrapped) {
+      const width = lineTokens.reduce(
+        (sum, token, index) =>
+          sum + doc.getTextWidth(token.text) + (index > 0 ? doc.getTextWidth(" ") : 0),
+        0,
+      );
+      let x = MARGIN + (contentWidth - width) / 2;
+      lineTokens.forEach((token, index) => {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(RESUME_FORMAT.contactSize);
+        const tokenWidth = doc.getTextWidth(token.text);
+        if (token.url) {
+          if (token.blackLink) {
+            doc.setTextColor(30, 30, 30);
+            doc.textWithLink(token.text, x, y, { url: token.url });
+          } else {
+            doc.setTextColor(...LINK_BLUE);
+            doc.textWithLink(token.text, x, y, { url: token.url });
+            doc.setDrawColor(...LINK_BLUE);
+            doc.setLineWidth(0.5);
+            doc.line(x, y + 2, x + tokenWidth, y + 2);
+          }
+          doc.setTextColor(30, 30, 30);
+        } else {
+          doc.setTextColor(30, 30, 30);
+          doc.text(token.text, x, y);
+        }
+        x += tokenWidth + (index < lineTokens.length - 1 ? doc.getTextWidth(" ") : 0);
+      });
+      y += LINE_HEIGHT;
+    }
+    return y;
   }
-  if (line.length > 0) lines.push(line);
 
   let y = startY;
-  for (const lineTokens of lines) {
-    const width = lineTokens.reduce(
-      (sum, token, index) =>
-        sum + doc.getTextWidth(token.text) + (index > 0 ? doc.getTextWidth(" ") : 0),
-      0,
-    );
-    let x = MARGIN + (contentWidth - width) / 2;
-    lineTokens.forEach((token, index) => {
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(RESUME_FORMAT.contactSize);
-      const tokenWidth = doc.getTextWidth(token.text);
-      if (token.url) {
-        doc.setTextColor(...LINK_BLUE);
-        doc.textWithLink(token.text, x, y, { url: token.url });
-        doc.setDrawColor(...LINK_BLUE);
-        doc.setLineWidth(0.5);
-        doc.line(x, y + 2, x + tokenWidth, y + 2);
-        doc.setTextColor(30, 30, 30);
-      } else {
-        doc.setTextColor(30, 30, 30);
-        doc.text(token.text, x, y);
-      }
-      x += tokenWidth + (index < lineTokens.length - 1 ? doc.getTextWidth(" ") : 0);
-    });
-    y += LINE_HEIGHT;
+  for (const segments of lines) {
+    y = drawLine(segments, y);
   }
   return y;
 }
@@ -562,11 +652,27 @@ function buildResumePdf(
 
   const w = pdfWriter(doc, y + 8);
 
-  if (content.summary.trim()) {
+  if (content.summaryBullets.length > 0) {
+    w.addSection("Professional Summary");
+    for (const bullet of content.summaryBullets) {
+      w.addWrapped(`•  ${bullet}`, RESUME_FORMAT.bodySize, false, 14);
+    }
+  } else if (content.summary.trim()) {
     w.addSection("Professional Summary");
     w.addWrapped(content.summary.trim(), RESUME_FORMAT.bodySize, false);
   }
-  if (content.skills.length > 0) {
+  if (content.skillGroups.length > 0) {
+    w.addSection("Skills");
+    for (const group of content.skillGroups) {
+      w.addMixedWrapped(
+        [
+          { text: `${group.label}:`, bold: true },
+          { text: group.skills.join(", "), bold: false },
+        ],
+        RESUME_FORMAT.bodySize,
+      );
+    }
+  } else if (content.skills.length > 0) {
     w.addSection("Skills");
     w.addWrapped(content.skills.join(", "), RESUME_FORMAT.bodySize, false);
   }
@@ -640,6 +746,7 @@ function buildCoverLetterPdf(
 async function buildResumeDocx(content: ResumeContent): Promise<Blob> {
   const {
     AlignmentType,
+    BorderStyle,
     Document,
     ExternalHyperlink,
     Packer,
@@ -655,6 +762,9 @@ async function buildResumeDocx(content: ResumeContent): Promise<Blob> {
   const heading = (text: string) =>
     new Paragraph({
       spacing: { before: 240, after: 80 },
+      // Thin horizontal rule directly under EVERY section heading, as on
+      // the reference resume.
+      border: { bottom: { color: "1E1E1E", space: 1, style: BorderStyle.SINGLE, size: 6 } },
       children: [calibri(text.toUpperCase(), { bold: true, size: RESUME_FORMAT.headingSize * 2 })],
     });
 
@@ -671,37 +781,70 @@ async function buildResumeDocx(content: ResumeContent): Promise<Blob> {
       children: [calibri(content.title, { size: RESUME_FORMAT.contactSize * 2 })],
     }),
   );
-  const contactRuns: (InstanceType<typeof TextRun> | InstanceType<typeof ExternalHyperlink>)[] = [];
-  for (const segment of contactSegments(content.contact)) {
+  // Contact as exactly two centered lines, as on the reference resume:
+  // line 1 "Email: … | Mobile: … | Location: …" (email is a black
+  // mailto: link), line 2 "Personal Website | GitHub | LinkedIn"
+  // (all three blue + underlined + clickable).
+  const contactRunFor = (
+    segment: ContactSegment,
+  ): InstanceType<typeof TextRun> | InstanceType<typeof ExternalHyperlink> => {
     if (segment.url) {
-      contactRuns.push(
-        new ExternalHyperlink({
-          link: segment.url,
-          children: [
-            new TextRun({
-              text: segment.text,
-              font: "Calibri",
-              size: RESUME_FORMAT.contactSize * 2,
-              color: "0563C1",
-              underline: {},
-            }),
-          ],
+      return new ExternalHyperlink({
+        link: segment.url,
+        children: [
+          new TextRun({
+            text: segment.text,
+            font: "Calibri",
+            size: RESUME_FORMAT.contactSize * 2,
+            color: segment.black ? "000000" : "0563C1",
+            ...(segment.black ? {} : { underline: {} }),
+          }),
+        ],
+      });
+    }
+    return calibri(segment.text, { size: RESUME_FORMAT.contactSize * 2 });
+  };
+  const { line1, line2 } = contactLines(content.contact);
+  for (const lineSegments of [line1, line2]) {
+    if (lineSegments.length === 0) continue;
+    children.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: lineSegments.map(contactRunFor),
+      }),
+    );
+  }
+  if (content.summaryBullets.length > 0) {
+    children.push(heading("Professional Summary"));
+    for (const bullet of content.summaryBullets) {
+      children.push(
+        new Paragraph({
+          bullet: { level: 0 },
+          spacing: { after: 40 },
+          children: [cambria(bullet, { size: RESUME_FORMAT.bodySize * 2 })],
         }),
       );
-    } else {
-      contactRuns.push(calibri(segment.text, { size: RESUME_FORMAT.contactSize * 2 }));
     }
-  }
-  if (contactRuns.length > 0) {
-    children.push(new Paragraph({ alignment: AlignmentType.CENTER, children: contactRuns }));
-  }
-  if (content.summary.trim()) {
+  } else if (content.summary.trim()) {
     children.push(
       heading("Professional Summary"),
       new Paragraph({ children: [cambria(content.summary.trim(), { size: RESUME_FORMAT.bodySize * 2 })] }),
     );
   }
-  if (content.skills.length > 0) {
+  if (content.skillGroups.length > 0) {
+    children.push(heading("Skills"));
+    for (const group of content.skillGroups) {
+      children.push(
+        new Paragraph({
+          spacing: { after: 40 },
+          children: [
+            calibri(`${group.label}: `, { bold: true, size: RESUME_FORMAT.bodySize * 2 }),
+            cambria(group.skills.join(", "), { size: RESUME_FORMAT.bodySize * 2 }),
+          ],
+        }),
+      );
+    }
+  } else if (content.skills.length > 0) {
     children.push(
       heading("Skills"),
       new Paragraph({ children: [cambria(content.skills.join(", "), { size: RESUME_FORMAT.bodySize * 2 })] }),

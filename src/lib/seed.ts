@@ -11,9 +11,18 @@ export const SAMPLE_PROFILE: ResumeProfile = {
   name: "Sravanthi Panga",
   title: "Software Engineer",
   contact:
-    "sravanthipanga51@gmail.com | 8159950003 | Lisle, IL, United States | https://www.linkedin.com/in/sravanthi-panga-174382204/ | https://github.com/Sravanthipanga | https://pangasravanthi.netlify.app/",
+    "sravanthipanga51@gmail.com | 8159950003 | Illinois, United States | https://www.linkedin.com/in/sravanthi-panga-174382204/ | https://github.com/Sravanthipanga | https://pangasravanthi.netlify.app/",
   summary:
     "Full-stack Software Engineer with 6+ years of experience building production backend and full-stack applications for enterprise healthcare platforms, specializing in Java 17/21, Spring Boot, Python, TypeScript, React/Next.js, Node.js, and PostgreSQL, with Apache Kafka and AWS/Azure cloud environments. Skilled in designing fault-tolerant, secure, and scalable systems using OAuth2, OpenID Connect, and JWT, and experienced with HL7/FHIR-based healthcare claims intake and review in HIPAA-regulated environments, including Palantir Foundry data integration. Recognized for technical leadership and mentoring, and for building mobile-responsive UIs that work seamlessly across browsers and devices.",
+  summaryBullets: [
+    "6+ years of experience as a Software Engineer specializing in full-stack development and back-end systems and processes, with a strong focus on developing and maintaining cost systems and ensuring seamless API integration with local databases.",
+    "Proven expertise in structured software development processes, applying best practices to deliver quality and consistency across projects while collaborating effectively with product and engineering teams.",
+    "Hands-on experience in Node.js and Next.js/React, with a solid understanding of SQL and ORM tools, particularly PostgreSQL; also strong in Java 17/21, Spring Boot, Python, TypeScript, Apache Kafka, and AWS/Azure cloud environments.",
+    "Skilled in designing fault-tolerant systems with a focus on security and scalability, incorporating OAuth2, OpenID Connect, and JWT authentication; experienced with HL7/FHIR-based integrations for healthcare claims intake and review in HIPAA-regulated environments.",
+    "Developed and maintained production backend and full-stack applications, designing scalable services, APIs, and distributed components for enterprise healthcare platforms.",
+    "Experienced in customer implementation and problem-solving using advanced technologies, including Palantir Foundry data integration, ontologies, and model orchestration.",
+    "Demonstrated ability to create mobile-responsive UIs that function seamlessly across various browsers and devices; recognized for technical leadership and mentoring capabilities.",
+  ],
   skills: [
     "Java",
     "Java 17",
@@ -139,6 +148,56 @@ export const SAMPLE_PROFILE: ResumeProfile = {
     "HIPAA",
     "OWASP API Top 10",
     "Agile",
+  ],
+  skillGroups: [
+    {
+      label: "Programming Languages",
+      skills: ["Java 17", "Java 21", "JavaScript", "SQL", "HTML", "CSS", "TypeScript", "Python", "React", "PySpark", "Linux"],
+    },
+    {
+      label: "Frameworks and Libraries",
+      skills: ["Spring Boot 3", "Spring Framework 6", "Spring MVC", "Spring WebFlux", "Spring Security", "OSDK", "Apache Kafka", "Node.js", "Next.js", "React", "Bootstrap"],
+    },
+    {
+      label: "API Development",
+      skills: ["REST API Design", "OpenAPI", "Swagger", "API Versioning", "Contract-First APIs", "OAuth2", "OpenID Connect (OIDC)", "JWT"],
+    },
+    {
+      label: "Microservices and Architecture",
+      skills: ["Microservices Architecture", "Distributed Systems", "Event-Driven Architecture", "Saga Pattern", "Outbox Pattern", "Circuit Breaker Pattern", "Resilience4j", "Service Discovery", "Kafka Streams", "Kafka Connect", "Distributed Transactions", "Idempotent Consumers", "Exactly-Once Processing", "At-Least-Once Semantics", "Retry and Backoff Strategies", "Data Consistency Models"],
+    },
+    {
+      label: "Data Management",
+      skills: ["PostgreSQL", "MySQL", "NoSQL Databases", "DynamoDB", "Cassandra", "MongoDB", "Database Indexing", "Query Optimization"],
+    },
+    {
+      label: "Cloud Technologies",
+      skills: ["AWS", "Amazon EKS", "Amazon ECS", "Amazon RDS", "Amazon MSK", "Azure AKS", "Azure Key Vault", "Google GKE"],
+    },
+    {
+      label: "Containerization and Orchestration",
+      skills: ["Docker", "Kubernetes", "Helm", "CI/CD Pipelines", "GitHub Actions", "Jenkins", "GitLab CI"],
+    },
+    {
+      label: "Infrastructure as Code",
+      skills: ["Terraform", "Cloud Networking", "Infrastructure as Code", "Monitoring and Alerting", "Centralized Logging"],
+    },
+    {
+      label: "Monitoring & Logging",
+      skills: ["OpenTelemetry", "Distributed Tracing", "Prometheus", "Grafana", "Centralized Logging", "Structured Logging", "Monitoring and Alerting", "Incident Response"],
+    },
+    {
+      label: "Testing and Quality Assurance",
+      skills: ["Unit Testing", "Integration Testing", "Contract Testing", "Testcontainers", "JUnit", "Mockito", "Performance Testing", "k6"],
+    },
+    {
+      label: "Soft Skills",
+      skills: ["Technical Leadership", "Communication", "Problem-Solving", "Collaboration", "Adaptability", "Critical Thinking", "Time Management", "Stakeholder Management", "Conflict Resolution"],
+    },
+    {
+      label: "Performance Optimization",
+      skills: ["Performance Tuning", "Latency Optimization", "High Availability Systems", "Scalability Engineering", "Fault Tolerance", "Data Consistency Models", "Retry and Backoff Strategies"],
+    },
   ],
   bullets: [
     {

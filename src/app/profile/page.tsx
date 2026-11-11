@@ -146,6 +146,21 @@ export default function ProfilePage() {
           />
         </label>
         <label className="block">
+          <span className="mb-1 block text-sm font-medium">
+            Professional Summary bullets (optional — one bullet per line; the resume renders these as bullets when present)
+          </span>
+          <textarea
+            value={(current.summaryBullets ?? []).join("\n")}
+            onChange={(e) =>
+              update({
+                summaryBullets: e.target.value.split("\n").map((s) => s.trim()).filter(Boolean),
+              })
+            }
+            rows={7}
+            className="w-full rounded-lg border border-zinc-300 px-3 py-2"
+          />
+        </label>
+        <label className="block">
           <span className="mb-1 block text-sm font-medium">Contact line (optional — shown on the resume)</span>
           <input
             value={current.contact ?? ""}
@@ -217,6 +232,40 @@ export default function ProfilePage() {
             />
           </div>
         </div>
+        <label className="block">
+          <span className="mb-1 block text-sm font-medium">
+            Skill groups (optional — one group per line as &quot;Label: skill, skill, …&quot;; the resume renders each group with a bold label when present)
+          </span>
+          <textarea
+            value={(current.skillGroups ?? [])
+              .map((g) => `${g.label}: ${g.skills.join(", ")}`)
+              .join("\n")}
+            onChange={(e) =>
+              update({
+                skillGroups: e.target.value
+                  .split("\n")
+                  .map((line) => line.trim())
+                  .filter(Boolean)
+                  .map((line) => {
+                    const colon = line.indexOf(":");
+                    if (colon === -1) return { label: line, skills: [] as string[] };
+                    return {
+                      label: line.slice(0, colon).trim(),
+                      skills: line
+                        .slice(colon + 1)
+                        .split(",")
+                        .map((s) => s.trim())
+                        .filter(Boolean),
+                    };
+                  })
+                  .filter((g) => g.label && g.skills.length > 0),
+              })
+            }
+            rows={12}
+            placeholder={"Programming Languages: Java 17, Java 21, JavaScript"}
+            className="w-full rounded-lg border border-zinc-300 px-3 py-2"
+          />
+        </label>
       </section>
 
       <section className="space-y-4">

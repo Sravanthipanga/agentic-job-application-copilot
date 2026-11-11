@@ -13,7 +13,7 @@ describe("Sravanthi Panga's real resume profile", () => {
   it("has her real contact details", () => {
     expect(SAMPLE_PROFILE.contact).toContain("sravanthipanga51@gmail.com");
     expect(SAMPLE_PROFILE.contact).toContain("8159950003");
-    expect(SAMPLE_PROFILE.contact).toContain("Lisle, IL");
+    expect(SAMPLE_PROFILE.contact).toContain("Illinois, United States");
     expect(SAMPLE_PROFILE.contact).toContain("linkedin.com/in/sravanthi-panga-174382204");
     expect(SAMPLE_PROFILE.contact).toContain("github.com/Sravanthipanga");
     expect(SAMPLE_PROFILE.contact).toContain("pangasravanthi.netlify.app");

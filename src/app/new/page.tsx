@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import BulletSelector from "@/components/BulletSelector";
 import DownloadButtons from "@/components/DownloadButtons";
 import { scoreApplication } from "@/lib/ats";
 import { extractCompany, extractRole } from "@/lib/jd";
@@ -252,47 +253,7 @@ export default function NewApplicationPage() {
               if you want to claim them.
             </p>
           )}
-          <ul className="space-y-4">
-            {bullets.map((bullet) => (
-              <li key={bullet.bulletId} className="rounded-lg border border-zinc-200 p-4">
-                <label className="flex items-start gap-3">
-                  <input
-                    type="checkbox"
-                    checked={bullet.approved}
-                    onChange={(e) =>
-                      setBullets((prev) =>
-                        prev.map((b) =>
-                          b.bulletId === bullet.bulletId ? { ...b, approved: e.target.checked } : b,
-                        ),
-                      )
-                    }
-                    className="mt-1"
-                  />
-                  <span className="flex-1">
-                    <span className="text-sm font-semibold">
-                      {bullet.company} — {bullet.role}
-                    </span>
-                    <span className="ml-2 text-xs text-zinc-500">
-                      relevance {bullet.relevance} · {bullet.matchedKeywords.join(", ") || "no JD keywords"}
-                    </span>
-                    <textarea
-                      value={bullet.suggestedText}
-                      onChange={(e) =>
-                        setBullets((prev) =>
-                          prev.map((b) =>
-                            b.bulletId === bullet.bulletId ? { ...b, suggestedText: e.target.value } : b,
-                          ),
-                        )
-                      }
-                      rows={2}
-                      aria-label={`Tailored bullet for ${bullet.company}`}
-                      className="mt-2 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                    />
-                  </span>
-                </label>
-              </li>
-            ))}
-          </ul>
+          <BulletSelector bullets={bullets} onChange={setBullets} />
           <div className="flex gap-3">
             <button
               type="button"
