@@ -44,6 +44,28 @@ Then track every application in one place.
 - **Application detail page** — JD, ATS breakdown, approved bullets, cover
   letter, status changer, notes field, delete. Export a tailored resume as
   Markdown or printable HTML, and the cover letter as Markdown.
+- **Resume Maker + Cover Letter Maker** — on the application detail page and
+  at the end of the New Application flow (step 5), download real files:
+  Resume (PDF), Resume (Word), Cover Letter (PDF), Cover Letter (Word).
+  Each button shows the exact filename it will download.
+  - **Filenames:** `<Name>_resume_<Company>.pdf` / `.docx` and
+    `<Name>_coverletter_<Company>.pdf` / `.docx`. The profile name's spaces
+    become underscores and the company name's spaces and punctuation are
+    removed, e.g. profile "Sravanthi Panga" + company "Acme Health" →
+    `Sravanthi_Panga_resume_AcmeHealth.pdf` and
+    `Sravanthi_Panga_coverletter_AcmeHealth.docx`. A missing company falls
+    back to `Company`.
+  - **Resume content:** header (name, title, contact line if set on your
+    profile), Professional Summary, Skills, Experience using only the
+    APPROVED tailored bullets grouped under their company/role, and
+    Education if set on your profile. Add a contact line and education on
+    the Resume Profile page.
+  - **Cover letter content:** header (name, title, date, company + role),
+    the saved cover-letter paragraphs, and a sign-off with your name.
+  - Resume buttons are disabled until at least one bullet is approved;
+    cover-letter buttons are disabled until a cover letter exists.
+  - Generated in the browser with `jspdf` (PDF) and `docx` (Word), loaded
+    only when you click a download button.
 - **Sample data** — a fictional sample profile ("Sam Carter", invented
   companies) and 3 sample applications in different statuses, so the
   dashboard is useful on first load. Replace the profile with your own and
@@ -53,6 +75,8 @@ Then track every application in one place.
 
 - Next.js 16 (App Router, `src/` directory, Turbopack) + TypeScript + Tailwind CSS 4
 - React 19, lucide-react icons, Zod validation
+- `jspdf` for PDF generation and `docx` for Word (.docx) generation — both
+  client-side, dynamically imported only when a download is clicked
 - Vitest + Testing Library + jsdom for tests
 - Storage: browser `localStorage` (with an in-memory fallback) via a
   `useSyncExternalStore` store — no accounts, no server database, no API keys
@@ -67,7 +91,7 @@ npm run dev
 Open http://localhost:3000
 
 ```sh
-npm test    # 5 test files, 26 tests
+npm test    # 6 test files, 42 tests
 npm run build
 npm run lint
 ```
@@ -91,6 +115,12 @@ to keep `npm install` reproducible.
 - **Cover letter** (`src/lib/coverLetter.ts`) — a template filled with the
   profile, company, role, top matched skills, and evidence from approved
   bullets only.
+- **Resume & cover-letter documents** (`src/lib/documents.ts`) — filename
+  rules (`resumeFilename` / `coverLetterFilename`), content assembly from
+  the profile + approved bullets only (`buildResumeContent`) and from the
+  saved cover letter (`buildCoverLetterContent`), and real PDF (jspdf) and
+  Word (docx) generation with headings, bold text, and bullet lists.
+  Filenames are `Sravanthi_Panga_resume_AcmeHealth.pdf` style; see Features.
 - **JD parsing** (`src/lib/jd.ts`) — labelled lines first, then "Role at
   Company" heuristics; the user always confirms the values.
 
@@ -100,7 +130,9 @@ to keep `npm install` reproducible.
   experience depth, and recruiter review.
 - The skill taxonomy is curated, so unusual or brand-new technologies may
   not be recognised — the score then understates the match.
-- Resume export is Markdown / printable HTML, not a designed PDF.
+- PDF resumes use a clean, simple template (headings, bold name, bullet
+  lists) rather than a designed multi-column layout; Word files use real
+  headings and bullet lists.
 - Data lives in the browser only: no cross-device sync, no sharing.
 
 ## Privacy
@@ -116,6 +148,5 @@ applications are fictional — do not treat them as a real person's resume.
   citation/grounding check before saving.
 - Supabase Postgres + Auth, so applications sync across devices and can be
   shared with a mentor.
-- Real PDF resume export with a designed template.
 - Job-board integrations (Greenhouse / Lever / LinkedIn) to import JDs
   directly, plus deadline reminders.

@@ -27,6 +27,10 @@ export interface ResumeProfile {
   summary: string;
   skills: string[];
   bullets: ExperienceBullet[];
+  /** Optional contact line shown on the resume, e.g. "email · phone · LinkedIn". */
+  contact?: string;
+  /** Optional education entries, one per line, e.g. "M.S. Computer Science, Northern Illinois University, 2025". */
+  education?: string[];
 }
 
 export interface AtsBreakdown {

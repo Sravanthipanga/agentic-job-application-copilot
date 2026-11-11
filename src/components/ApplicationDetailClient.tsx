@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import DownloadButtons from "@/components/DownloadButtons";
 import { deleteApplication, updateApplication, useStore } from "@/lib/store";
 import {
   downloadCoverLetter,
@@ -127,6 +128,23 @@ export default function ApplicationDetailPage() {
         <pre className="mt-3 whitespace-pre-wrap font-sans text-sm leading-relaxed">
           {app.coverLetter || "No cover letter saved for this application."}
         </pre>
+      </section>
+
+      <section className="rounded-xl border border-zinc-200 bg-white p-6">
+        <h2 className="text-xl font-semibold">Download</h2>
+        <p className="mt-1 text-sm text-zinc-600">
+          Resume Maker and Cover Letter Maker — real PDF and Word files, generated in your
+          browser from your approved bullets and cover letter.
+        </p>
+        <div className="mt-4">
+          <DownloadButtons
+            profile={profile}
+            company={app.company}
+            role={app.role}
+            bullets={app.tailoredBullets}
+            coverLetter={app.coverLetter}
+          />
+        </div>
       </section>
 
       <section className="rounded-xl border border-zinc-200 bg-white p-6">

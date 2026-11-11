@@ -145,6 +145,29 @@ export default function ProfilePage() {
             className="w-full rounded-lg border border-zinc-300 px-3 py-2"
           />
         </label>
+        <label className="block">
+          <span className="mb-1 block text-sm font-medium">Contact line (optional — shown on the resume)</span>
+          <input
+            value={current.contact ?? ""}
+            onChange={(e) => update({ contact: e.target.value })}
+            placeholder="email · phone · LinkedIn"
+            className="w-full rounded-lg border border-zinc-300 px-3 py-2"
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-sm font-medium">Education (optional — one entry per line)</span>
+          <textarea
+            value={(current.education ?? []).join("\n")}
+            onChange={(e) =>
+              update({
+                education: e.target.value.split("\n").map((s) => s.trim()).filter(Boolean),
+              })
+            }
+            rows={2}
+            placeholder={"M.S. Computer Science, Northern Illinois University, 2025"}
+            className="w-full rounded-lg border border-zinc-300 px-3 py-2"
+          />
+        </label>
         <div>
           <span className="mb-1 block text-sm font-medium">Skills</span>
           <div className="flex flex-wrap gap-2">

@@ -15,6 +15,8 @@ export const profileSchema = z.object({
   summary: z.string().trim().max(1000),
   skills: z.array(z.string().trim().min(1)).max(60),
   bullets: z.array(bulletSchema).max(30),
+  contact: z.string().trim().max(200).optional(),
+  education: z.array(z.string().trim().min(1)).max(10).optional(),
 });
 
 export const jdSchema = z.object({

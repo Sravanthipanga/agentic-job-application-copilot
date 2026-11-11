@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import DownloadButtons from "@/components/DownloadButtons";
 import { scoreApplication } from "@/lib/ats";
 import { extractCompany, extractRole } from "@/lib/jd";
 import { tailorBullets } from "@/lib/tailor";
@@ -354,6 +355,18 @@ export default function NewApplicationPage() {
             of <strong>{ats?.score ?? 0}</strong>. Change the status on the application page once
             you apply.
           </p>
+          <div className="rounded-xl border border-zinc-100 bg-zinc-50 p-4 text-left">
+            <h3 className="font-semibold">Download your resume &amp; cover letter</h3>
+            <div className="mt-3">
+              <DownloadButtons
+                profile={profile}
+                company={company}
+                role={role}
+                bullets={bullets}
+                coverLetter={coverLetter}
+              />
+            </div>
+          </div>
           <div className="flex justify-center gap-3">
             <button
               type="button"
