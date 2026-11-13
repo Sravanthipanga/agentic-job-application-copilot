@@ -138,6 +138,27 @@ describe("resume content assembly", () => {
     );
     expect(content.experience[0].bullets[0]).toContain("production-quality full-stack features");
   });
+
+  it("renders the ENHANCED suggestedText (not the originalText) for an approved bullet", () => {
+    const enhanced: TailoredBullet = {
+      bulletId: "b14",
+      company: "Bamboo Health",
+      role: "Software Engineer (Jun 2026 – Present)",
+      originalText: "Plan and execute unit and functional tests to ensure changes meet requirements.",
+      suggestedText:
+        "Plan and execute unit and functional tests to ensure changes meet requirements, leveraging Unit Testing and Integration Testing.",
+      matchedKeywords: ["Testing"],
+      relevance: 1,
+      approved: true,
+      surfacedSkills: ["Unit Testing", "Integration Testing"],
+    };
+    const content = buildResumeContent(TEST_PROFILE, [enhanced]);
+    const allBullets = content.experience.flatMap((g) => g.bullets);
+    expect(allBullets).toEqual([
+      "Plan and execute unit and functional tests to ensure changes meet requirements, leveraging Unit Testing and Integration Testing.",
+    ]);
+    expect(allBullets).not.toContain(enhanced.originalText);
+  });
 });
 
 describe("cover letter content assembly", () => {

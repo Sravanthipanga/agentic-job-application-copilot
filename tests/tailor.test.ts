@@ -42,5 +42,20 @@ describe("tailorBullets", () => {
     expect(suggested).toContain("Kubernetes");
     expect(suggested).toContain("AWS");
     expect(suggested).toContain("estimation accuracy");
+    // The enhancement appends a natural trailing clause, not the old
+    // clunky " using X." suffix.
+    expect(suggested).toContain(", leveraging AWS and Kubernetes.");
+  });
+
+  it("tailorBullets records the surfaced skills on each tailored bullet", () => {
+    const { tailored } = tailorBullets(SAMPLE_PROFILE, ["Testing"]);
+    const b14 = tailored.find((b) => b.bulletId === "b14");
+    expect(b14?.surfacedSkills).toEqual(["Unit Testing", "Integration Testing"]);
+    expect(b14?.suggestedText).toBe(
+      "Plan and execute unit and functional tests to ensure changes meet requirements, leveraging Unit Testing and Integration Testing.",
+    );
+    // A bullet whose skills are all already in its text surfaces none.
+    const b52 = tailored.find((b) => b.bulletId === "b52");
+    expect(b52?.surfacedSkills).toEqual([]);
   });
 });

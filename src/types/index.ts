@@ -72,6 +72,11 @@ export interface TailoredBullet {
   matchedKeywords: string[];
   relevance: number;
   approved: boolean;
+  /** Skills from the bullet's OWN skills array that the JD
+   *  enhancement surfaced into suggestedText (see lib/enhance.ts).
+   *  Optional for backward compatibility with saved applications
+   *  created before the enhancement existed. */
+  surfacedSkills?: string[];
   /** Where this bullet came from. Profile bullets are the default. A
    *  "suggested-confirmed" bullet began as a missing-keyword draft and
    *  was actively edited and confirmed by the user as work they have

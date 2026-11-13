@@ -1,4 +1,5 @@
 import { profileMatchesKeyword } from "./ats";
+import { enhanceBulletText } from "./enhance";
 import type { ExperienceBullet, ResumeProfile, TailoredBullet } from "@/types";
 
 /**
@@ -9,8 +10,11 @@ import type { ExperienceBullet, ResumeProfile, TailoredBullet } from "@/types";
  *    titles, dates, or achievements are invented.
  * 2. A suggested rephrasing may only surface a skill that the bullet
  *    already lists in its `skills` array but does not mention in its
- *    text (e.g. append "using AWS"). It never adds a skill the bullet
- *    does not already claim.
+ *    text, appended as a trailing ", leveraging X." clause by
+ *    enhance.ts (which also applies conservative whitespace /
+ *    punctuation cleanup). It never adds a skill the bullet does not
+ *    already claim, and matching is alias-aware (see ats.ts), so
+ *    "REST API Design" can surface for the JD keyword "REST API".
  * 3. JD keywords no bullet's skills cover are reported as
  *    `unclaimable` — the UI must show them as a warning, never as a
  *    bullet the user could claim.
@@ -26,17 +30,13 @@ function bulletKeywords(bullet: ExperienceBullet, jdKeywords: string[]): string[
   return jdKeywords.filter((k) => mentions(haystack, k));
 }
 
-/** Suggest an honest rephrasing of a bullet for the JD.
- *  Only adds a skill already listed on the bullet and missing from
- *  its text, as a trailing "using X" clause. Otherwise returns the
- *  original text unchanged. */
+/** Suggest an honest, enhanced rephrasing of a bullet for the JD.
+ *  Thin wrapper over enhanceBulletText (lib/enhance.ts): cleans the
+ *  text conservatively and surfaces skills already listed on the
+ *  bullet and missing from its text as a trailing ", leveraging X."
+ *  clause. Returns the cleaned original when nothing can surface. */
 export function suggestRephrasing(bullet: ExperienceBullet, jdKeywords: string[]): string {
-  const missingFromText = bullet.skills.filter(
-    (skill) => jdKeywords.some((k) => k.toLowerCase() === skill.toLowerCase()) && !mentions(bullet.text, skill),
-  );
-  if (missingFromText.length === 0) return bullet.text;
-  const base = bullet.text.replace(/[.\s]+$/, "");
-  return `${base} using ${missingFromText.join(", ")}.`;
+  return enhanceBulletText(bullet, jdKeywords).text;
 }
 
 export interface TailorResult {
@@ -62,12 +62,14 @@ export function tailorBullets(profile: ResumeProfile, jdKeywords: string[]): Tai
   const tailored: TailoredBullet[] = profile.bullets
     .map((bullet) => {
       const matched = bulletKeywords(bullet, jdKeywords);
+      const enhancement = enhanceBulletText(bullet, jdKeywords);
       return {
         bulletId: bullet.id,
         company: bullet.company,
         role: bullet.role,
         originalText: bullet.text,
-        suggestedText: suggestRephrasing(bullet, jdKeywords),
+        suggestedText: enhancement.text,
+        surfacedSkills: enhancement.surfacedSkills,
         matchedKeywords: matched,
         relevance: matched.length,
         approved: matched.length > 0,

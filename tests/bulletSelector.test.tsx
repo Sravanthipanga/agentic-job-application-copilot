@@ -96,3 +96,69 @@ describe("BulletSelector — Select all", () => {
     expect(screen.getByText("No tailored bullets for this job description.")).toBeInTheDocument();
   });
 });
+
+function makeEnhanced(id: string): TailoredBullet {
+  return {
+    bulletId: id,
+    company: "Bamboo Health",
+    role: "Software Engineer",
+    originalText: `Original bullet ${id}`,
+    suggestedText: `Original bullet ${id}, leveraging Unit Testing.`,
+    matchedKeywords: ["Testing"],
+    relevance: 1,
+    approved: true,
+    surfacedSkills: ["Unit Testing"],
+  };
+}
+
+describe("BulletSelector — JD enhancement controls", () => {
+  it("shows the helper copy explaining enhancements are per-application", () => {
+    render(<Harness initial={[makeEnhanced("b1")]} />);
+    expect(
+      screen.getByText(/Enhancements only surface skills already on each point/),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/your profile points stay original/)).toBeInTheDocument();
+  });
+
+  it("shows the Enhanced badge and surfaced skills only when the text differs from the original", () => {
+    const plain: TailoredBullet = {
+      ...makeEnhanced("b2"),
+      suggestedText: "Original bullet b2",
+      surfacedSkills: [],
+    };
+    render(<Harness initial={[makeEnhanced("b1"), plain]} />);
+    expect(screen.getAllByText("Enhanced for this JD")).toHaveLength(1);
+    expect(screen.getByText("Surfaced: Unit Testing")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Reset to original" })).toHaveLength(1);
+  });
+
+  it("Reset to original restores the bullet's original text", () => {
+    render(<Harness initial={[makeEnhanced("b1")]} />);
+    const textarea = screen.getByLabelText(
+      "Tailored bullet for Bamboo Health",
+    ) as HTMLTextAreaElement;
+    expect(textarea.value).toContain("leveraging Unit Testing");
+    fireEvent.click(screen.getByRole("button", { name: "Reset to original" }));
+    expect(textarea.value).toBe("Original bullet b1");
+    expect(screen.queryByText("Enhanced for this JD")).toBeNull();
+  });
+
+  it("Reset all to original restores every bullet's original text", () => {
+    render(<Harness initial={[makeEnhanced("b1"), makeEnhanced("b2")]} />);
+    fireEvent.click(screen.getByRole("button", { name: "Reset all to original" }));
+    const textareas = screen.getAllByLabelText(
+      "Tailored bullet for Bamboo Health",
+    ) as HTMLTextAreaElement[];
+    expect(textareas.map((t) => t.value)).toEqual(["Original bullet b1", "Original bullet b2"]);
+    expect(screen.queryByText("Enhanced for this JD")).toBeNull();
+  });
+
+  it("manual editing of the textarea still works after enhancement", () => {
+    render(<Harness initial={[makeEnhanced("b1")]} />);
+    const textarea = screen.getByLabelText(
+      "Tailored bullet for Bamboo Health",
+    ) as HTMLTextAreaElement;
+    fireEvent.change(textarea, { target: { value: "Hand-edited bullet text." } });
+    expect(textarea.value).toBe("Hand-edited bullet text.");
+  });
+});
