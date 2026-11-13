@@ -39,10 +39,13 @@ describe("profile alias matching", () => {
       expect.arrayContaining([
         "REST API",
         "Testing",
-        "Security",
         "Observability",
       ]),
     );
+    // The Fun-resume profile (Nov 13, 2026) no longer lists a skill the
+    // catalog counts as Security evidence (the previous profile's
+    // "Spring Security" is not in it), so Security is now missing.
+    expect(result.missing).toContain("Security");
   });
 
   it("does not use a partial word inside another skill as evidence", () => {
@@ -55,7 +58,7 @@ describe("profile alias matching", () => {
 });
 
 describe("scoreApplication", () => {
-  it("scores the Twitch JD at 91 with only Machine Learning missing", () => {
+  it("scores the Twitch JD at 82 with Machine Learning and Security missing", () => {
     const result = scoreApplication(TWITCH_JD, SAMPLE_PROFILE.skills);
     expect(result.keywords).toEqual([
       "Python",
@@ -70,9 +73,9 @@ describe("scoreApplication", () => {
       "Security",
       "Observability",
     ]);
-    expect(result.matched).toHaveLength(10);
-    expect(result.missing).toEqual(["Machine Learning"]);
-    expect(result.score).toBe(91);
+    expect(result.matched).toHaveLength(9);
+    expect(result.missing).toEqual(["Machine Learning", "Security"]);
+    expect(result.score).toBe(82);
   });
   it("scores matched / total and lists matched and missing keywords", () => {
     const result = scoreApplication(JD, SAMPLE_PROFILE.skills);

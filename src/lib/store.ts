@@ -13,14 +13,21 @@ import type { Application, ResumeProfile } from "@/types";
  * changed from the fictional sample to Sravanthi Panga's real resume
  * (Nov 11, 2026), so browsers holding the old v1 seed load the new one.
  *
- * The seed profile has since gained fields the v2-stored profile may
- * lack (summaryBullets + skillGroups, added in commit 0b6cdff, and the
- * seed contact changed from "Lisle, IL, United States" to "Illinois,
- * United States"). Bumping the key again would wipe the user's saved
- * applications and any profile edits, so instead stored profiles are
- * MIGRATED in place on load (see migrateProfile below): only the
- * missing/old fields are filled from the seed; everything else the
- * user stored is preserved. */
+ * Within v2, profiles carry a `seedVersion` (PROFILE_SEED_VERSION in
+ * seed.ts). When the seed profile's content is replaced wholesale —
+ * v2 = the uploaded Fun resume, Nov 13, 2026 — a stored profile with a
+ * missing/older seedVersion is REPLACED by the new seed on load (see
+ * migrateProfile below). Saved applications live under their own key
+ * and are never touched by a profile replacement.
+ *
+ * A stored profile already at the current seedVersion is instead
+ * migrated field-by-field: the seed has gained fields such a profile
+ * may lack (summaryBullets + skillGroups, added in commit 0b6cdff, and
+ * the seed contact changed from "Lisle, IL, United States" to
+ * "Illinois, United States"). Bumping the storage key instead would
+ * wipe the user's saved applications and any profile edits, so only
+ * the missing/old fields are filled from the seed; everything else
+ * the user stored is preserved. */
 const PROFILE_KEY = "copilot-profile-v2";
 const APPS_KEY = "copilot-applications-v2";
 
@@ -44,25 +51,38 @@ function readStored<T>(key: string, fallback: T): T {
   }
 }
 
-/** Migrate a stored profile to the current seed shape, in place.
+/** Migrate a stored profile to the current seed, in place.
  *
- *  A browser that stored its profile under "copilot-profile-v2" before
- *  the reference-format fix (commit 0b6cdff) holds a profile with no
- *  `summaryBullets` and no `skillGroups`, and a contact line with
- *  "Lisle, IL, United States". Without migration, documents.ts falls
- *  back to the summary paragraph and the flat skills list, so the
- *  downloaded PDF is the OLD format even though the app code is new
- *  (the Fintech PDF incident, Nov 11, 2026).
+ *  Two levels, by the stored profile's `seedVersion`:
  *
- *  Only the missing/old fields are filled from SAMPLE_PROFILE; every
- *  other stored field (name, title, summary, skills, bullets,
- *  education, certifications, and any user edits) is preserved
- *  untouched. Returns the (possibly migrated) profile and whether
- *  anything changed. Pure — safe to unit-test. */
+ *  1. Missing or older than the seed's (PROFILE_SEED_VERSION): the
+ *     seed profile's content has been replaced wholesale since this
+ *     profile was stored (e.g. the Nov 13, 2026 Fun-resume swap), so
+ *     the stored profile is replaced by the current seed. Only the
+ *     profile is replaced — the caller loads applications from their
+ *     own storage key, untouched.
+ *
+ *  2. Current seedVersion: field-level migration. A browser that
+ *     stored its profile before the reference-format fix (commit
+ *     0b6cdff) holds a profile with no `summaryBullets` and no
+ *     `skillGroups`, and a contact line with "Lisle, IL, United
+ *     States". Without migration, documents.ts falls back to the
+ *     summary paragraph and the flat skills list, so the downloaded
+ *     PDF is the OLD format even though the app code is new (the
+ *     Fintech PDF incident, Nov 11, 2026). Only the missing/old
+ *     fields are filled from SAMPLE_PROFILE; every other stored
+ *     field (name, title, summary, skills, bullets, education,
+ *     certifications, and any user edits) is preserved untouched.
+ *
+ *  Returns the (possibly migrated) profile and whether anything
+ *  changed. Pure — safe to unit-test. */
 export function migrateProfile(stored: ResumeProfile): {
   profile: ResumeProfile;
   migrated: boolean;
 } {
+  if ((stored.seedVersion ?? 0) < (SAMPLE_PROFILE.seedVersion ?? 0)) {
+    return { profile: deepCopy(SAMPLE_PROFILE), migrated: true };
+  }
   const profile = deepCopy(stored);
   let migrated = false;
   if (!profile.summaryBullets || profile.summaryBullets.length === 0) {
@@ -80,11 +100,11 @@ export function migrateProfile(stored: ResumeProfile): {
   return { profile, migrated };
 }
 
-/** Load the stored profile, migrating it in place when it predates the
- *  reference-format fields (see migrateProfile). The migrated profile
- *  is written back to localStorage so the next load is already current.
- *  Falls back to the seed when nothing is stored or the stored value
- *  is unreadable. Never touches the stored applications. */
+/** Load the stored profile, migrating it on load when it predates the
+ *  current seed (see migrateProfile). The migrated profile is written
+ *  back to localStorage so the next load is already current. Falls
+ *  back to the seed when nothing is stored or the stored value is
+ *  unreadable. Never touches the stored applications. */
 function loadProfile(): ResumeProfile {
   if (typeof window === "undefined") return deepCopy(SAMPLE_PROFILE);
   try {

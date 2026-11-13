@@ -29,8 +29,15 @@ export interface SkillGroup {
 export interface ResumeProfile {
   name: string;
   title: string;
+  /** Content version of the seed profile this profile came from
+   *  (see PROFILE_SEED_VERSION in lib/seed.ts). When a stored
+   *  profile's seedVersion is older than the current seed's, the
+   *  store replaces the stored profile with the new seed — saved
+   *  applications are preserved. Absent on profiles stored before
+   *  versioning existed, which the store treats as version 0. */
+  seedVersion?: number;
   summary: string;
-  /** The 7 original Professional Summary bullets, verbatim, in order.
+  /** The original Professional Summary bullets, verbatim, in order.
    *  When present, the resume renders the summary as bullets; the
    *  `summary` paragraph is the fallback / ATS text. */
   summaryBullets?: string[];

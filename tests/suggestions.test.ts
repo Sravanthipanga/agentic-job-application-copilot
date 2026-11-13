@@ -35,7 +35,7 @@ function mlDraft(
 }
 
 describe("buildMissingKeywordSuggestions", () => {
-  it("creates one editable placeholder draft for the Twitch JD's only missing keyword", () => {
+  it("creates editable placeholder drafts for the Twitch JD's missing keywords, Machine Learning first", () => {
     const ats = scoreApplication(TWITCH_JD, SAMPLE_PROFILE.skills);
     const suggestions = buildMissingKeywordSuggestions(
       ats.missing,
@@ -43,9 +43,9 @@ describe("buildMissingKeywordSuggestions", () => {
       TWITCH_JD,
     );
 
-    expect(ats.score).toBe(91);
-    expect(ats.missing).toEqual(["Machine Learning"]);
-    expect(suggestions).toHaveLength(1);
+    expect(ats.score).toBe(82);
+    expect(ats.missing).toEqual(["Machine Learning", "Security"]);
+    expect(suggestions).toHaveLength(2);
     expect(suggestions[0]).toMatchObject({
       id: "suggested-machine-learning",
       keyword: "Machine Learning",
@@ -53,11 +53,12 @@ describe("buildMissingKeywordSuggestions", () => {
     });
     expect(suggestions[0].draftText).toContain("[describe your project, dataset, or model]");
     expect(suggestions[0].draftText).not.toMatch(/\d+%|\$\d|Bamboo Health|Context4|Optum|Phoenix/);
+    // The Fun-resume profile (Nov 13, 2026) does not list PySpark or
+    // SQL, so the Machine Learning draft's profile technologies are
+    // just Python and PostgreSQL now.
     expect(suggestions[0].suggestedTechnologies).toEqual([
       "Machine Learning",
       "Python",
-      "PySpark",
-      "SQL",
       "PostgreSQL",
     ]);
   });
@@ -132,7 +133,7 @@ describe("missing-keyword confirmation gate", () => {
       SAMPLE_PROFILE,
       TWITCH_JD,
     );
-    expect(ats.score).toBe(91);
+    expect(ats.score).toBe(82);
     expect(projectedAtsScore(ats, suggestions)).toBe(100);
   });
 });

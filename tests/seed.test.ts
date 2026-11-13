@@ -19,8 +19,8 @@ describe("Sravanthi Panga's real resume profile", () => {
     expect(SAMPLE_PROFILE.contact).toContain("pangasravanthi.netlify.app");
   });
 
-  it("covers all four employers with 65 bullets", () => {
-    expect(SAMPLE_PROFILE.bullets).toHaveLength(65);
+  it("covers all four employers with 46 bullets", () => {
+    expect(SAMPLE_PROFILE.bullets).toHaveLength(46);
     const companies = new Set(SAMPLE_PROFILE.bullets.map((b) => b.company));
     expect(companies).toEqual(
       new Set([
@@ -34,31 +34,122 @@ describe("Sravanthi Panga's real resume profile", () => {
     for (const bullet of SAMPLE_PROFILE.bullets) {
       counts[bullet.company] = (counts[bullet.company] ?? 0) + 1;
     }
-    expect(counts["Bamboo Health"]).toBe(17);
-    expect(counts["Context4 Healthcare - Naperville, IL"]).toBe(19);
-    expect(counts["Optum Global Solutions - Hyderabad, India"]).toBe(19);
+    expect(counts["Bamboo Health"]).toBe(12);
+    expect(counts["Context4 Healthcare - Naperville, IL"]).toBe(12);
+    expect(counts["Optum Global Solutions - Hyderabad, India"]).toBe(12);
     expect(counts["Phoenix Global - Hyderabad, India"]).toBe(10);
-    // Ids are sequential b1..b65 with no gaps or duplicates.
+    // Ids are sequential b1..b46 with no gaps or duplicates.
     expect(SAMPLE_PROFILE.bullets.map((b) => b.id)).toEqual(
-      Array.from({ length: 65 }, (_, i) => `b${i + 1}`),
+      Array.from({ length: 46 }, (_, i) => `b${i + 1}`),
     );
+  });
+
+  it("carries seedVersion 2 (the Fun-resume profile replacement)", () => {
+    expect(SAMPLE_PROFILE.seedVersion).toBe(2);
+  });
+
+  it("has the Fun resume's 8 summary bullets, verbatim and in order", () => {
+    expect(SAMPLE_PROFILE.summaryBullets).toHaveLength(8);
+    expect(SAMPLE_PROFILE.summaryBullets?.[0]).toBe(
+      "Recognized for taking ownership of projects, ensuring successful outcomes from concept through production, and utilizing customer feedback for product improvement.",
+    );
+    expect(SAMPLE_PROFILE.summaryBullets?.[7]).toBe(
+      "Strong background in cloud platforms, particularly AWS, with hands-on experience in deploying applications using services like Amazon EKS and RDS.",
+    );
+    // The summary paragraph is the concatenation of the bullets.
+    expect(SAMPLE_PROFILE.summary).toBe(SAMPLE_PROFILE.summaryBullets?.join(" "));
+  });
+
+  it("has the Fun resume's 10 skill groups in PDF order, and the flat list is their union", () => {
+    expect(SAMPLE_PROFILE.skillGroups?.map((g) => g.label)).toEqual([
+      "API Development",
+      "Frameworks and Libraries",
+      "Microservices Architecture",
+      "Soft Skills",
+      "Programming Languages",
+      "Cloud Platforms",
+      "Database Technologies",
+      "DevOps and CI/CD",
+      "Testing and Quality Assurance",
+      "Monitoring and Logging",
+    ]);
+    const union: string[] = [];
+    for (const group of SAMPLE_PROFILE.skillGroups ?? []) {
+      for (const skill of group.skills) {
+        if (!union.includes(skill)) union.push(skill);
+      }
+    }
+    expect(SAMPLE_PROFILE.skills).toEqual(union);
+    expect(SAMPLE_PROFILE.skills).toHaveLength(74);
+  });
+
+  it("includes the Fun resume's new points verbatim", () => {
+    const texts = SAMPLE_PROFILE.bullets.map((b) => b.text);
+    expect(texts).toContain(
+      "Worked on workflow orchestration and platform automation for healthcare claims processing systems at Change Healthcare's Distributed Clearing House, utilizing Airflow for workflow scheduling and monitoring, Terraform for cloud infrastructure provisioning, and GitHub Actions for automated build, test, and deployment pipelines across AWS environments.",
+    );
+    expect(texts).toContain(
+      "Conducted code reviews and integrated automated testing frameworks such as JUnit and Mockito, improving code quality and reducing bugs by 30%.",
+    );
+  });
+
+  it("keeps every employer's Technologies Used line covered by its bullets' skills", () => {
+    // documents.ts builds each Technologies Used line from the union
+    // of the employer's bullets' skills, so the union must cover the
+    // full list as printed in the Fun resume for that employer.
+    const technologiesByCompany: Record<string, string[]> = {
+      "Bamboo Health": [
+        "Java 21", "Spring Boot 3", "REST API Design", "TypeScript", "OpenAPI", "Swagger",
+        "OAuth2", "OpenID Connect", "Docker", "AWS", "Kubernetes", "Apache Kafka", "JUnit",
+        "Mockito", "CI/CD Pipelines", "Performance Tuning", "Monitoring and Alerting",
+        "AI-assisted Development Tools",
+      ],
+      "Context4 Healthcare - Naperville, IL": [
+        "Java 17", "Spring Framework 6", "Microservices Architecture", "Redis Caching",
+        "PostgreSQL", "NoSQL Databases", "Swagger", "GitHub Actions", "Terraform",
+        "Performance Testing", "Agile Methodologies", "Secure API Design", "Secrets Management",
+      ],
+      "Optum Global Solutions - Hyderabad, India": [
+        "Java", "Spring MVC", "REST API Design", "Jakarta EE Migration", "Testcontainers",
+        "CI/CD Pipelines", "Prometheus", "Grafana", "Automated Testing",
+        "Distributed Transactions", "Resilience Patterns", "Clean Code Principles",
+      ],
+      "Phoenix Global - Hyderabad, India": [
+        "Java", "Spring Boot", "Microservices Architecture", "OpenAPI", "MySQL",
+        "CI/CD Pipelines", "Jenkins", "Unit Testing", "Integration Testing",
+        "High-Availability Systems", "Logging and Monitoring", "Agile Practices",
+      ],
+    };
+    for (const [company, technologies] of Object.entries(technologiesByCompany)) {
+      const union = new Set(
+        SAMPLE_PROFILE.bullets
+          .filter((b) => b.company === company)
+          .flatMap((b) => b.skills),
+      );
+      for (const technology of technologies) {
+        expect(union.has(technology)).toBe(true);
+      }
+    }
   });
 
   it("includes the key skills from her resume", () => {
     for (const skill of [
       "Java 17",
       "Java 21",
-      "Spring Boot",
+      "Spring Boot 3",
       "PostgreSQL",
       "Apache Kafka",
-      "HL7/FHIR",
-      "Palantir Foundry",
       "Terraform",
       "Kubernetes",
       "OAuth2",
       "TypeScript",
-      "React",
       "Python",
+      "OpenAPI",
+      "Swagger",
+      "Service Discovery",
+      "Amazon MSK",
+      "GitLab CI",
+      "SLO and SLA Management",
     ]) {
       expect(SAMPLE_PROFILE.skills).toContain(skill);
     }

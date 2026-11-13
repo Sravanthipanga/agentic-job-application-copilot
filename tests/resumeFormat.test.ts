@@ -122,11 +122,11 @@ describe("experience ordering (Fintech PDF bug)", () => {
     }
   });
 
-  it("keeps all 65 profile bullets (17 + 19 + 19 + 10)", () => {
+  it("keeps all 46 profile bullets (12 + 12 + 12 + 10)", () => {
     const content = buildResumeContent(SAMPLE_PROFILE, allApproved());
     const counts = content.experience.map((g) => g.bullets.length);
-    expect(counts).toEqual([17, 19, 19, 10]);
-    expect(content.experience.flatMap((g) => g.bullets)).toHaveLength(65);
+    expect(counts).toEqual([12, 12, 12, 10]);
+    expect(content.experience.flatMap((g) => g.bullets)).toHaveLength(46);
   });
 
   it("tailor ranking no longer uses an alphabetical tie-break", () => {
@@ -172,34 +172,33 @@ describe("contact links", () => {
 
 describe("reference-format fixes (second screenshot vs generated resume)", () => {
   const EXPECTED_SUMMARY_BULLETS = [
-    "6+ years of experience as a Software Engineer specializing in full-stack development and back-end systems and processes, with a strong focus on developing and maintaining cost systems and ensuring seamless API integration with local databases.",
-    "Proven expertise in structured software development processes, applying best practices to deliver quality and consistency across projects while collaborating effectively with product and engineering teams.",
-    "Hands-on experience in Node.js and Next.js/React, with a solid understanding of SQL and ORM tools, particularly PostgreSQL; also strong in Java 17/21, Spring Boot, Python, TypeScript, Apache Kafka, and AWS/Azure cloud environments.",
-    "Skilled in designing fault-tolerant systems with a focus on security and scalability, incorporating OAuth2, OpenID Connect, and JWT authentication; experienced with HL7/FHIR-based integrations for healthcare claims intake and review in HIPAA-regulated environments.",
-    "Developed and maintained production backend and full-stack applications, designing scalable services, APIs, and distributed components for enterprise healthcare platforms.",
-    "Experienced in customer implementation and problem-solving using advanced technologies, including Palantir Foundry data integration, ontologies, and model orchestration.",
-    "Demonstrated ability to create mobile-responsive UIs that function seamlessly across various browsers and devices; recognized for technical leadership and mentoring capabilities.",
+    "Recognized for taking ownership of projects, ensuring successful outcomes from concept through production, and utilizing customer feedback for product improvement.",
+    "6+ years of experience as a Software Engineer specializing in designing, building, and deploying cloud-native applications while ensuring high performance, security, and scalability.",
+    "Proven expertise in modern programming languages including Java, with a strong foundation in software engineering principles and practices.",
+    "Experience with AI-assisted development tools, enhancing productivity through automation and improved coding practices, including familiarity with GitHub Copilot.",
+    "Demonstrated ability to collaborate effectively across cross-functional teams, contributing to technical design discussions and delivering customer-focused solutions.",
+    "Committed to continuous learning and experimentation with emerging technologies, actively seeking feedback to enhance personal and team performance.",
+    "Skilled in developing RESTful APIs and microservices architecture, leveraging frameworks such as Spring Boot and Jakarta EE for efficient application development.",
+    "Strong background in cloud platforms, particularly AWS, with hands-on experience in deploying applications using services like Amazon EKS and RDS.",
   ];
 
   const EXPECTED_SKILL_GROUP_LABELS = [
-    "Programming Languages",
-    "Frameworks and Libraries",
     "API Development",
-    "Microservices and Architecture",
-    "Data Management",
-    "Cloud Technologies",
-    "Containerization and Orchestration",
-    "Infrastructure as Code",
-    "Monitoring & Logging",
-    "Testing and Quality Assurance",
+    "Frameworks and Libraries",
+    "Microservices Architecture",
     "Soft Skills",
-    "Performance Optimization",
+    "Programming Languages",
+    "Cloud Platforms",
+    "Database Technologies",
+    "DevOps and CI/CD",
+    "Testing and Quality Assurance",
+    "Monitoring and Logging",
   ];
 
-  it("1. summary renders as her 7 original bullets, verbatim and in order", () => {
+  it("1. summary renders as her 8 original bullets, verbatim and in order", () => {
     const content = buildResumeContent(SAMPLE_PROFILE, allApproved());
     expect(content.summaryBullets).toEqual(EXPECTED_SUMMARY_BULLETS);
-    expect(SAMPLE_PROFILE.summaryBullets).toHaveLength(7);
+    expect(SAMPLE_PROFILE.summaryBullets).toHaveLength(8);
   });
 
   it("1. summary bullets appear in the Word file; paragraph is the fallback only", async () => {
@@ -215,24 +214,23 @@ describe("reference-format fixes (second screenshot vs generated resume)", () =>
       allApproved(),
     );
     const fallbackXml = unzipEntry(new Uint8Array(await fallback.arrayBuffer()), "word/document.xml");
-    expect(fallbackXml).toContain("Full-stack Software Engineer with 6+ years");
+    expect(fallbackXml).toContain("Recognized for taking ownership of projects");
   });
 
-  it("2. skills render as 12 labelled groups with the correct skills in each", () => {
+  it("2. skills render as 10 labelled groups with the correct skills in each", () => {
     const content = buildResumeContent(SAMPLE_PROFILE, allApproved());
-    expect(content.skillGroups).toHaveLength(12);
+    expect(content.skillGroups).toHaveLength(10);
     expect(content.skillGroups.map((g) => g.label)).toEqual(EXPECTED_SKILL_GROUP_LABELS);
     const byLabel = new Map(content.skillGroups.map((g) => [g.label, g.skills]));
     expect(byLabel.get("Programming Languages")).toEqual([
-      "Java 17", "Java 21", "JavaScript", "SQL", "HTML", "CSS", "TypeScript", "Python", "React", "PySpark", "Linux",
+      "Java 17", "Java 21", "Python", "TypeScript", "JavaScript", "Kotlin", "Swift", "C#",
     ]);
-    expect(byLabel.get("Microservices and Architecture")).toContain("Saga Pattern");
-    expect(byLabel.get("Microservices and Architecture")).toContain("Outbox Pattern");
-    expect(byLabel.get("Monitoring & Logging")).toContain("Prometheus");
-    expect(byLabel.get("Monitoring & Logging")).toContain("Incident Response");
-    expect(byLabel.get("Performance Optimization")).toContain("Fault Tolerance");
-    expect(byLabel.get("Cloud Technologies")).toEqual([
-      "AWS", "Amazon EKS", "Amazon ECS", "Amazon RDS", "Amazon MSK", "Azure AKS", "Azure Key Vault", "Google GKE",
+    expect(byLabel.get("Microservices Architecture")).toContain("Saga Pattern");
+    expect(byLabel.get("Microservices Architecture")).toContain("Service Discovery");
+    expect(byLabel.get("Monitoring and Logging")).toContain("Prometheus");
+    expect(byLabel.get("Monitoring and Logging")).toContain("SLO and SLA Management");
+    expect(byLabel.get("Cloud Platforms")).toEqual([
+      "AWS", "Azure", "Google Cloud Platform", "Amazon EKS", "Amazon ECS", "Amazon RDS", "Amazon MSK", "Azure AKS", "Apache Kafka",
     ]);
   });
 
@@ -240,16 +238,16 @@ describe("reference-format fixes (second screenshot vs generated resume)", () =>
     const blob = await generateResumeDocxBlob(SAMPLE_PROFILE, allApproved());
     const bytes = new Uint8Array(await blob.arrayBuffer());
     const documentXml = unzipEntry(bytes, "word/document.xml");
-    expect(documentXml).toContain("Programming Languages:");
+    expect(documentXml).toContain("API Development:");
     expect(documentXml).toContain("Frameworks and Libraries:");
-    expect(documentXml).toContain("Monitoring &amp; Logging:");
-    expect(documentXml).toContain("Performance Optimization:");
+    expect(documentXml).toContain("DevOps and CI/CD:");
+    expect(documentXml).toContain("Monitoring and Logging:");
     const fallback = await generateResumeDocxBlob(
       { ...SAMPLE_PROFILE, skillGroups: undefined },
       allApproved(),
     );
     const fallbackXml = unzipEntry(new Uint8Array(await fallback.arrayBuffer()), "word/document.xml");
-    expect(fallbackXml).toContain("Java 17, Java 21");
+    expect(fallbackXml).toContain("REST API Design, API Versioning");
   });
 
   it("3. every section heading has a rule underneath in the Word file", async () => {

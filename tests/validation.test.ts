@@ -33,7 +33,7 @@ describe("export helpers", () => {
     const md = resumeMarkdown(SAMPLE_PROFILE, SAMPLE_APPLICATIONS[0].tailoredBullets, "Senior Software Engineer", "Acme Health");
     expect(md).toContain("Sravanthi Panga");
     expect(md).toContain("Acme Health");
-    expect(md).toContain("production-quality full-stack features");
+    expect(md).toContain("Engineered cloud-native applications leveraging Java 21");
     expect(md).not.toContain("Mentored junior developers");
   });
 

@@ -119,8 +119,8 @@ describe("resume content assembly", () => {
   it("carries the contact line, skills, summary, and education from the profile", () => {
     const content = buildResumeContent(TEST_PROFILE, [APPROVED]);
     expect(content.contact).toBe("sravanthipanga51@gmail.com | 8159950003 | Lisle, IL, United States");
-    expect(content.skills).toContain("Java");
-    expect(content.summary).toContain("Full-stack");
+    expect(content.skills).toContain("Java 17");
+    expect(content.summary).toContain("Recognized for taking ownership");
     expect(content.education).toEqual([
       "Masters in Computer Science | Northern Illinois University | 3.38 GPA",
     ]);
@@ -136,7 +136,7 @@ describe("resume content assembly", () => {
       SAMPLE_PROFILE,
       SAMPLE_APPLICATIONS[0].tailoredBullets,
     );
-    expect(content.experience[0].bullets[0]).toContain("production-quality full-stack features");
+    expect(content.experience[0].bullets[0]).toContain("Engineered cloud-native applications");
   });
 
   it("renders the ENHANCED suggestedText (not the originalText) for an approved bullet", () => {

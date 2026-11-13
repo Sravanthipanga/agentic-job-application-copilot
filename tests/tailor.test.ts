@@ -35,7 +35,17 @@ describe("tailorBullets", () => {
   });
 
   it("suggestRephrasing surfaces a listed-but-unmentioned skill and leaves other text alone", () => {
-    const bullet = SAMPLE_PROFILE.bullets[15]; // b16: AWS + Kubernetes, both mentioned in the text
+    // Synthetic bullet: AWS + Kubernetes are both listed in its skills
+    // and both mentioned in this version of the text, so nothing is
+    // surfaced. (This used to read a real profile bullet; the profile
+    // content is user data and changes, so the fixture is local now.)
+    const bullet = {
+      id: "bx",
+      company: "Bamboo Health",
+      role: "Software Engineer (Jun 2026 – Present)",
+      text: "Deploy and operate services on AWS with Kubernetes; collaborate in sprint planning to improve estimation accuracy and development flow.",
+      skills: ["AWS", "Kubernetes"],
+    };
     expect(suggestRephrasing(bullet, ["Kubernetes", "AWS"])).toBe(bullet.text);
     const withHidden = { ...bullet, text: "Deploy and operate containerized services; collaborate in sprint planning to improve estimation accuracy and development flow." };
     const suggested = suggestRephrasing(withHidden, ["Kubernetes", "AWS"]);
@@ -49,13 +59,16 @@ describe("tailorBullets", () => {
 
   it("tailorBullets records the surfaced skills on each tailored bullet", () => {
     const { tailored } = tailorBullets(SAMPLE_PROFILE, ["Testing"]);
-    const b14 = tailored.find((b) => b.bulletId === "b14");
-    expect(b14?.surfacedSkills).toEqual(["Unit Testing", "Integration Testing"]);
-    expect(b14?.suggestedText).toBe(
-      "Plan and execute unit and functional tests to ensure changes meet requirements, leveraging Unit Testing and Integration Testing.",
+    // b46 (Phoenix) carries the employer's full Technologies Used list
+    // and its text mentions neither Unit Testing nor Integration
+    // Testing, so both are surfaced for a Testing JD keyword.
+    const b46 = tailored.find((b) => b.bulletId === "b46");
+    expect(b46?.surfacedSkills).toEqual(["Unit Testing", "Integration Testing"]);
+    expect(b46?.suggestedText).toBe(
+      "Mentored interns, providing guidance on software development best practices and fostering a collaborative learning environment, leveraging Unit Testing and Integration Testing.",
     );
     // A bullet whose skills are all already in its text surfaces none.
-    const b52 = tailored.find((b) => b.bulletId === "b52");
-    expect(b52?.surfacedSkills).toEqual([]);
+    const b42 = tailored.find((b) => b.bulletId === "b42");
+    expect(b42?.surfacedSkills).toEqual([]);
   });
 });
