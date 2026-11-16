@@ -109,7 +109,7 @@ npm run dev
 Open http://localhost:3000
 
 ```sh
-npm test    # 7 test files, 51 tests
+npm test    # 13 test files, 131 tests
 npm run build
 npm run lint
 ```
