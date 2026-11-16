@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import BulletSelector from "@/components/BulletSelector";
 import DownloadButtons from "@/components/DownloadButtons";
 import MissingKeywordSuggestions from "@/components/MissingKeywordSuggestions";
-import { scoreApplication } from "@/lib/ats";
+import { scoreApplication, scoreTailoredResume } from "@/lib/ats";
 import { extractCompany, extractRole } from "@/lib/jd";
 import {
   buildMissingKeywordSuggestions,
@@ -44,6 +44,17 @@ export default function NewApplicationPage() {
   const ats = useMemo(
     () => (jdText.trim().length >= 50 ? scoreApplication(jdText, profile.skills) : null),
     [jdText, profile.skills],
+  );
+
+  // The score of the resume actually being built: approved bullets
+  // only, recomputed on every Step 3 edit (approve/unapprove, text
+  // edits, enhancement resets, confirmed suggested points). Null until
+  // bullets exist, so saveApplication can fall back to the profile
+  // score in the (unreachable in the normal flow) empty-bullets case.
+  const tailoredAts = useMemo(
+    () =>
+      bullets.length > 0 ? scoreTailoredResume(jdText, bullets) : null,
+    [jdText, bullets],
   );
 
   function goToStep2(): void {
@@ -105,12 +116,12 @@ export default function NewApplicationPage() {
       dateApplied: new Date().toISOString().slice(0, 10),
       jdText,
       jdLink: jdLink.trim(),
-      atsScore: ats?.score ?? 0,
+      atsScore: tailoredAts?.score ?? ats?.score ?? 0,
       projectedAtsScore: ats
         ? projectedAtsScore(ats, suggestionDrafts)
         : undefined,
-      matchedKeywords: ats?.matched ?? [],
-      missingKeywords: ats?.missing ?? [],
+      matchedKeywords: tailoredAts?.matched ?? ats?.matched ?? [],
+      missingKeywords: tailoredAts?.missing ?? ats?.missing ?? [],
       tailoredBullets: approved,
       coverLetter,
       notes: "",
@@ -309,6 +320,53 @@ export default function NewApplicationPage() {
               confirm that you have actually done the work.
             </p>
           )}
+          {tailoredAts && (
+            <div className="space-y-3 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3">
+              <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
+                <p className="text-sm">
+                  <span className="font-medium text-zinc-600">Profile ATS: </span>
+                  <strong>{ats?.score ?? 0}/100</strong>
+                </p>
+                <p className="text-sm">
+                  <span className="font-medium text-zinc-600">
+                    Resume ATS — updates as you edit bullets:{" "}
+                  </span>
+                  <strong className="text-lg">{tailoredAts.score}/100</strong>
+                </p>
+              </div>
+              <p className="text-sm text-zinc-600">
+                The Resume ATS scores only the bullets you have approved, using the
+                wording that will actually appear in the resume — this is the score
+                saved with the application.
+              </p>
+              <div>
+                <h3 className="text-sm font-semibold text-green-700">Matched in your resume</h3>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {tailoredAts.matched.length === 0 && (
+                    <span className="text-sm text-zinc-500">None yet.</span>
+                  )}
+                  {tailoredAts.matched.map((k) => (
+                    <span key={k} className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
+                      {k}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-amber-700">Missing from your resume</h3>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {tailoredAts.missing.length === 0 && (
+                    <span className="text-sm text-zinc-500">None — full match.</span>
+                  )}
+                  {tailoredAts.missing.map((k) => (
+                    <span key={k} className="rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800">
+                      {k}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
           <BulletSelector
             bullets={bullets.filter(
               (bullet) => bullet.source !== "suggested-confirmed",
@@ -379,7 +437,7 @@ export default function NewApplicationPage() {
           <h2 className="text-xl font-semibold">Saved to your tracker ✅</h2>
           <p className="text-zinc-600">
             {role} at {company} was saved with status <strong>Wishlist</strong> and an ATS score
-            of <strong>{ats?.score ?? 0}</strong>. Change the status on the application page once
+            of <strong>{tailoredAts?.score ?? ats?.score ?? 0}</strong>. Change the status on the application page once
             you apply.
           </p>
           <div className="rounded-xl border border-zinc-100 bg-zinc-50 p-4 text-left">
