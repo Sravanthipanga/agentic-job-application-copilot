@@ -1,5 +1,5 @@
 import { SKILL_CATALOG, SKILL_CATEGORIES, type SkillEntry } from "./skills";
-import type { AtsResult } from "@/types";
+import type { AtsResult, TailoredBullet } from "@/types";
 
 /** Escape a string for use inside a RegExp. */
 function escapeRegExp(value: string): string {
@@ -93,6 +93,100 @@ export function scoreApplication(jdText: string, profileSkills: string[]): AtsRe
     const total = inCategory.filter((s) => keywords.includes(s.name)).length;
     const matchedCount = inCategory.filter(
       (s) => keywords.includes(s.name) && profileMatchesKeyword(profileSkills, s.name),
+    ).length;
+    return { category, total, matched: matchedCount };
+  }).filter((b) => b.total > 0);
+
+  return { score, keywords, matched, missing, breakdown };
+}
+
+/** Does ONE tailored bullet provide evidence for a JD keyword?
+ *
+ *  Evidence mirrors exactly what the generated resume claims for that
+ *  bullet (see buildResumeContent in documents.ts):
+ *  - the keywords the bullet matched when it was tailored
+ *    (`matchedKeywords`, computed in tailor.ts from the profile
+ *    bullet's OWN text and OWN `skills` array — the same skills the
+ *    resume's "Technologies Used:" line lists for an approved bullet);
+ *  - the skills attached to the bullet itself — `surfacedSkills`
+ *    (the bullet's own skills the enhancement surfaced) and, for a
+ *    confirmed suggested point, its `technologies` — matched with the
+ *    same alias-aware logic as the profile score; and
+ *  - the keyword or any of its catalog aliases mentioned in the
+ *    bullet's FINAL text — `suggestedText || originalText`, the exact
+ *    expression the resume generator uses, so user edits and
+ *    enhancement resets are reflected.
+ *
+ *  Note: TailoredBullet carries no `skills` array of its own (the
+ *  skills live on the profile's ExperienceBullet), so the first two
+ *  sources above are how an approved bullet's own skills evidence the
+ *  keyword — the same evidence the downloaded resume presents. */
+function tailoredBulletMatchesKeyword(
+  bullet: TailoredBullet,
+  keyword: string,
+): boolean {
+  if (
+    bullet.matchedKeywords.some(
+      (k) => k.toLowerCase() === keyword.toLowerCase(),
+    )
+  ) {
+    return true;
+  }
+
+  const attachedSkills = [
+    ...(bullet.surfacedSkills ?? []),
+    ...(bullet.technologies ?? []),
+  ];
+  if (
+    attachedSkills.length > 0 &&
+    profileMatchesKeyword(attachedSkills, keyword)
+  ) {
+    return true;
+  }
+
+  const catalogSkill = SKILL_CATALOG.find(
+    (skill) => skill.name.toLowerCase() === keyword.toLowerCase(),
+  );
+  const terms = catalogSkill
+    ? [catalogSkill.name, ...catalogSkill.aliases]
+    : [keyword];
+  const finalText = bullet.suggestedText || bullet.originalText;
+  return terms.some((term) => mentions(finalText, term));
+}
+
+/** Score the TAILORED resume — the approved bullets only — against a
+ *  job description. Same internal keyword-match estimate and the same
+ *  formula as scoreApplication (matched / JD keywords, rounded; a JD
+ *  with no recognised skills scores 0), but the evidence comes from
+ *  what will actually appear in the resume:
+ *  - ONLY bullets with `approved === true` count. Unapproved bullets
+ *    contribute nothing, even if their profile bullet claims the skill.
+ *  - The full profile is never consulted: a profile skill no approved
+ *    bullet carries does not count.
+ *  - Unconfirmed missing-keyword drafts are not TailoredBullets, so
+ *    they cannot count; a draft counts only once it has been confirmed
+ *    and appended as an approved "suggested-confirmed" bullet.
+ *
+ *  This is the score saved with the application, because it describes
+ *  the resume the user actually built in Step 3. */
+export function scoreTailoredResume(
+  jdText: string,
+  bullets: TailoredBullet[],
+): AtsResult {
+  const keywords = extractKeywords(jdText);
+  const approved = bullets.filter((b) => b.approved);
+  const isMatched = (keyword: string): boolean =>
+    approved.some((bullet) => tailoredBulletMatchesKeyword(bullet, keyword));
+  const matched = keywords.filter(isMatched);
+  const missing = keywords.filter((k) => !isMatched(k));
+  const score =
+    keywords.length === 0 ? 0 : Math.round((matched.length / keywords.length) * 100);
+
+  const breakdown = SKILL_CATEGORIES.map((category) => {
+    const inCategory = SKILL_CATALOG.filter((s) => s.category === category);
+    const total = inCategory.filter((s) => keywords.includes(s.name)).length;
+    const matchedCount = inCategory.filter(
+      (s) => keywords.includes(s.name) && isMatched(s.name),
     ).length;
     return { category, total, matched: matchedCount };
   }).filter((b) => b.total > 0);
