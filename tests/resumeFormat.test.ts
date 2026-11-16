@@ -148,7 +148,7 @@ describe("contact links", () => {
     expect(parsed.links).toEqual([
       { label: "LinkedIn", url: "https://www.linkedin.com/in/sravanthi-panga-174382204/" },
       { label: "GitHub", url: "https://github.com/Sravanthipanga" },
-      { label: "Personal Website", url: "https://pangasravanthi.netlify.app/" },
+      { label: "Personal Website", url: "https://sravanthipanga.vercel.app/" },
     ]);
   });
 
@@ -159,7 +159,7 @@ describe("contact links", () => {
       "mailto:sravanthipanga51@gmail.com",
       "https://www.linkedin.com/in/sravanthi-panga-174382204/",
       "https://github.com/Sravanthipanga",
-      "https://pangasravanthi.netlify.app/",
+      "https://sravanthipanga.vercel.app/",
     ]);
     expect(linked.map((s) => s.text)).toEqual([
       "sravanthipanga51@gmail.com",
@@ -281,7 +281,7 @@ describe("reference-format fixes (second screenshot vs generated resume)", () =>
     );
     expect(line2Text).toBe("Personal Website | GitHub | LinkedIn");
     expect(line2.filter((s) => s.url).map((s) => s.url)).toEqual([
-      "https://pangasravanthi.netlify.app/",
+      "https://sravanthipanga.vercel.app/",
       "https://github.com/Sravanthipanga",
       "https://www.linkedin.com/in/sravanthi-panga-174382204/",
     ]);
@@ -300,7 +300,7 @@ describe("reference-format fixes (second screenshot vs generated resume)", () =>
     // resume has none, so the count is 3, not 4.)
     expect((documentXml.match(/w:val="center"/g) ?? []).length).toBeGreaterThanOrEqual(3);
     expect(relsXml).toContain("mailto:sravanthipanga51@gmail.com");
-    expect(relsXml).toContain("https://pangasravanthi.netlify.app/");
+    expect(relsXml).toContain("https://sravanthipanga.vercel.app/");
     expect(relsXml).toContain("https://github.com/Sravanthipanga");
     expect(relsXml).toContain("https://www.linkedin.com/in/sravanthi-panga-174382204/");
     // Line 2 order in the document: Personal Website, then GitHub, then LinkedIn.
@@ -312,7 +312,7 @@ describe("reference-format fixes (second screenshot vs generated resume)", () =>
     const blob = await generateResumePdfBlob(SAMPLE_PROFILE, allApproved());
     const text = new TextDecoder("latin1").decode(await blob.arrayBuffer());
     expect(text).toContain("mailto:sravanthipanga51@gmail.com");
-    expect(text).toContain("https://pangasravanthi.netlify.app/");
+    expect(text).toContain("https://sravanthipanga.vercel.app/");
     expect(text).toContain("https://github.com/Sravanthipanga");
     expect(text).toContain("https://www.linkedin.com/in/sravanthi-panga-174382204/");
   });
@@ -333,7 +333,7 @@ describe("generated resume files", () => {
     expect(text).toContain("mailto:sravanthipanga51@gmail.com");
     expect(text).toContain("https://www.linkedin.com/in/sravanthi-panga-174382204/");
     expect(text).toContain("https://github.com/Sravanthipanga");
-    expect(text).toContain("https://pangasravanthi.netlify.app/");
+    expect(text).toContain("https://sravanthipanga.vercel.app/");
   });
 
   it("Word file uses Calibri/Cambria, has real hyperlinks, and no 'Tailored for' line", async () => {
@@ -355,7 +355,7 @@ describe("generated resume files", () => {
     expect(relsXml).toContain("mailto:sravanthipanga51@gmail.com");
     expect(relsXml).toContain("https://www.linkedin.com/in/sravanthi-panga-174382204/");
     expect(relsXml).toContain("https://github.com/Sravanthipanga");
-    expect(relsXml).toContain("https://pangasravanthi.netlify.app/");
+    expect(relsXml).toContain("https://sravanthipanga.vercel.app/");
   });
 
   it("filenames are unchanged", () => {
