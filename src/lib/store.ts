@@ -24,7 +24,9 @@ import type { Application, ResumeProfile } from "@/types";
  * migrated field-by-field: the seed has gained fields such a profile
  * may lack (summaryBullets + skillGroups, added in commit 0b6cdff, and
  * the seed contact changed from "Lisle, IL, United States" to
- * "Illinois, United States"). Bumping the storage key instead would
+ * "Illinois, United States"; the portfolio link in the contact later
+ * changed from the Netlify URL to https://sravanthipanga.vercel.app/,
+ * which is rewritten in place so any other contact edits survive). Bumping the storage key instead would
  * wipe the user's saved applications and any profile edits, so only
  * the missing/old fields are filled from the seed; everything else
  * the user stored is preserved. */
@@ -95,6 +97,13 @@ export function migrateProfile(stored: ResumeProfile): {
   }
   if (profile.contact && profile.contact.includes("Lisle, IL, United States")) {
     profile.contact = SAMPLE_PROFILE.contact ?? profile.contact;
+    migrated = true;
+  }
+  if (profile.contact && profile.contact.includes("pangasravanthi.netlify.app")) {
+    profile.contact = profile.contact.replace(
+      "https://pangasravanthi.netlify.app/",
+      "https://sravanthipanga.vercel.app/",
+    );
     migrated = true;
   }
   return { profile, migrated };

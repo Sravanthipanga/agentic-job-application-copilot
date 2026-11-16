@@ -123,6 +123,19 @@ describe("profile migration (seedVersion replacement + field fills)", () => {
     expect(profile.contact).toContain("Illinois, United States");
   });
 
+  it("rewrites the old Netlify portfolio link in place, preserving the rest of the contact line", () => {
+    const { profile, migrated } = migrateProfile({
+      ...SAMPLE_PROFILE,
+      contact:
+        "sravanthipanga51@gmail.com | 8159950003 | Illinois, United States | https://pangasravanthi.netlify.app/",
+    });
+    expect(migrated).toBe(true);
+    expect(profile.contact).toBe(
+      "sravanthipanga51@gmail.com | 8159950003 | Illinois, United States | https://sravanthipanga.vercel.app/",
+    );
+    expect(profile.contact).not.toContain("netlify.app");
+  });
+
   it("preserves everything else in a current-version stored profile", () => {
     const stored = {
       ...SAMPLE_PROFILE,

@@ -16,7 +16,7 @@ describe("Sravanthi Panga's real resume profile", () => {
     expect(SAMPLE_PROFILE.contact).toContain("Illinois, United States");
     expect(SAMPLE_PROFILE.contact).toContain("linkedin.com/in/sravanthi-panga-174382204");
     expect(SAMPLE_PROFILE.contact).toContain("github.com/Sravanthipanga");
-    expect(SAMPLE_PROFILE.contact).toContain("pangasravanthi.netlify.app");
+    expect(SAMPLE_PROFILE.contact).toContain("sravanthipanga.vercel.app");
   });
 
   it("covers all four employers with 46 bullets", () => {
